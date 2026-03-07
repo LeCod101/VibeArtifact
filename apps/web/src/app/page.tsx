@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import {
-  Layers,
   ArrowRight,
   Github,
   CheckCircle2,
@@ -104,13 +104,15 @@ export default function Home() {
       >
         <div className="max-w-[1200px] mx-auto px-6 flex items-center justify-between">
           <div className="flex items-center gap-10">
-            <div className="flex items-center gap-3 group cursor-pointer">
-              <div className="relative w-9 h-9 bg-gradient-to-br from-[#00d2ff] to-[#01e0e0] rounded-xl flex items-center justify-center transition-all duration-500 group-hover:shadow-[0_0_25px_rgba(0,210,255,0.6)] group-hover:scale-110 group-hover:rotate-6">
-                <Layers className="text-black w-5 h-5 font-black" />
-              </div>
-              <span className="text-xl font-black text-white tracking-widest uppercase italic">
-                VibeArtifact
-              </span>
+            <div className="flex items-center group cursor-pointer">
+              <Image
+                src="/logo.png"
+                alt="VibeArtifact"
+                width={480}
+                height={480}
+                className="h-12 w-auto invert transition-all duration-500 group-hover:opacity-80"
+                priority
+              />
             </div>
           </div>
           <div className="flex items-center gap-8">
@@ -671,12 +673,13 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
             <div className="md:col-span-2 space-y-6">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded shrink-0 bg-[#00d2ff] flex items-center justify-center">
-                  <Layers className="text-black w-5 h-5 font-black" />
-                </div>
-                <span className="text-xl font-black text-white tracking-widest uppercase italic">
-                  VibeArtifact
-                </span>
+                <Image
+                  src="/logo.png"
+                  alt="VibeArtifact"
+                  width={480}
+                  height={480}
+                  className="h-10 w-auto invert"
+                />
               </div>
               <p className="text-sm text-slate-500 max-w-sm leading-relaxed">
                 {L(t.footer.desc, locale)}
