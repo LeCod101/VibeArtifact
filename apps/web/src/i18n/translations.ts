@@ -1,0 +1,198 @@
+export type Locale = "zh" | "en";
+
+const translations = {
+  // Nav
+  nav: {
+    product: { zh: "产品", en: "Product" },
+    docs: { zh: "文档", en: "Docs" },
+    pricing: { zh: "定价", en: "Pricing" },
+    cta: { zh: "立即构建", en: "Start Building" },
+  },
+
+  // Hero
+  hero: {
+    badge: {
+      zh: "VibeArtifact v2.5 已正式发布",
+      en: "VibeArtifact v2.5 is now stable",
+    },
+    title1: { zh: "停止写代码.", en: "Stop Writing Code." },
+    title2: { zh: "开始生成系统.", en: "Start Generating Systems." },
+    desc: {
+      zh: "不再满足于碎片化代码片段。VibeArtifact 结合深度神经网络与确定性系统工程，",
+      en: "No more fragmented code snippets. VibeArtifact combines deep neural networks with deterministic systems engineering to ",
+    },
+    descBold: {
+      zh: "只需一句话，自动为您生成并部署具备工业级可靠性的全栈微服务架构。",
+      en: "automatically generate and deploy production-grade full-stack microservice architectures from a single sentence.",
+    },
+    btnPrimary: { zh: "开始免费构建", en: "Start Building Free" },
+    btnGithub: { zh: "查看开源核心", en: "View Open Source Core" },
+    noCreditCard: { zh: "无需信用卡", en: "No credit card required" },
+    deploy: {
+      zh: "支持一键部署至 AWS / Vercel",
+      en: "One-click deploy to AWS / Vercel",
+    },
+    trustedBy: {
+      zh: "全球工程团队的共同选择",
+      en: "Trusted by global engineering teams",
+    },
+  },
+
+  // Interactive showcase
+  interactive: {
+    engineTitle: { zh: "合成引擎", en: "Synthesis Engine" },
+    engineSub: { zh: "自主工程化", en: "Autonomous Engineering" },
+    tabs: {
+      zh: ["需求解码", "架构合成", "资产交付"],
+      en: ["Decode", "Synthesize", "Deliver"],
+    },
+    statusLabel: {
+      zh: "引擎实时处理中",
+      en: "Engine processing live",
+    },
+    // Step 01
+    step01Label: { zh: "解码意图", en: "Decode Intent" },
+    step01Input: {
+      zh: "构建一个支持 Stripe 支付、RBAC 权限和实时库存推送的跨境电商平台。",
+      en: "Build a cross-border e-commerce platform with Stripe payments, RBAC permissions, and real-time inventory push.",
+    },
+    identifyEntities: { zh: "识别业务实体", en: "Identify Business Entities" },
+    identifyServices: { zh: "识别三方服务", en: "Identify Third-party Services" },
+    // Step 02
+    step02Label: { zh: "架构推演", en: "Architecture Synthesis" },
+    archDiagram: { zh: "微服务架构图谱", en: "Microservice Architecture Graph" },
+    ermTitle: { zh: "实体关系模型", en: "Entity Relational Model" },
+    ermDesc: {
+      zh: "正在处理 Schema 关系...",
+      en: "Processing Schema relationships...",
+    },
+    // Step 03
+    step03Label: { zh: "系统构建交付", en: "System Build & Delivery" },
+  },
+
+  // Capabilities
+  capabilities: {
+    sectionTitle1: { zh: "为绝对可靠性", en: "Engineered for" },
+    sectionTitle2: { zh: "而设计。", en: "Absolute Reliability." },
+    sectionDesc: {
+      zh: "不仅生成代码，更保障架构级的安全与高性能。超越传统的 AI 辅助，这是可信度100%的代码生成自动化引擎。",
+      en: "Beyond code generation — architectural security and high performance guaranteed. Surpassing traditional AI assistance, this is a 100% trustworthy automated code generation engine.",
+    },
+    items: [
+      {
+        title: { zh: "意图解码", en: "Intent Decoding" },
+        desc: {
+          zh: "利用神经网络提取非结构化语言中的核心业务实体，瞬间转化为高维逻辑规约。",
+          en: "Leverages neural networks to extract core business entities from unstructured language, instantly converting them into high-dimensional logical specifications.",
+        },
+        statLabel: { zh: "解码准确率", en: "Decode Accuracy" },
+        features: {
+          zh: ["支持自然语言输入", "多模态意图识别", "零延迟实时转换"],
+          en: [
+            "Natural language input",
+            "Multi-modal intent recognition",
+            "Zero-latency real-time conversion",
+          ],
+        },
+      },
+      {
+        title: { zh: "全栈合成", en: "Full-Stack Synthesis" },
+        desc: {
+          zh: "跨层级代码生成。确保 API 定义、数据库 Schema 与 UI 组件实时语义对齐。",
+          en: "Cross-layer code generation. Ensures real-time semantic alignment between API definitions, database schemas, and UI components.",
+        },
+        statLabel: { zh: "合成延迟", en: "Synthesis Latency" },
+        features: {
+          zh: ["自动对齐 Schema", "前后端无缝对接"],
+          en: ["Auto-align schemas", "Seamless frontend-backend integration"],
+        },
+      },
+      {
+        title: { zh: "基础设施自动机", en: "Infra Automaton" },
+        desc: {
+          zh: "深度感知部署环境，自动化配置多云环境下的 K8s 与 Terraform 资源。",
+          en: "Deep deployment environment awareness. Automates K8s and Terraform resource configuration across multi-cloud environments.",
+        },
+        statLabel: { zh: "底层支持", en: "Infrastructure" },
+        features: {
+          zh: ["Terraform 自动化", "K8s 原生支持"],
+          en: ["Terraform automation", "K8s native support"],
+        },
+      },
+      {
+        title: { zh: "逻辑强一致性", en: "Strong Consistency" },
+        desc: {
+          zh: "任何微小的需求变更都会引发全链路传播。拒绝工程断层，确保系统绝对同步。",
+          en: "Every requirement change propagates across the entire chain. Zero engineering gaps, absolute system synchronization.",
+        },
+        statLabel: { zh: "工程断层", en: "Engineering Gaps" },
+        features: {
+          zh: ["全链路传播", "严格逻辑校验"],
+          en: ["Full-chain propagation", "Strict logic validation"],
+        },
+      },
+      {
+        title: { zh: "工业级工程文档", en: "Industrial-Grade Docs" },
+        desc: {
+          zh: "自动生成高保真架构图、时序图及完整的 API 参考手册，无需人工干预。",
+          en: "Automatically generates high-fidelity architecture diagrams, sequence diagrams, and complete API reference manuals without manual intervention.",
+        },
+        statLabel: { zh: "自动同步", en: "Auto Sync" },
+        features: {
+          zh: ["高保真架构图", "API 参考手册", "Markdown 导出"],
+          en: [
+            "High-fidelity architecture diagrams",
+            "API reference manuals",
+            "Markdown export",
+          ],
+        },
+      },
+      {
+        title: { zh: "架构级逻辑校验", en: "Architecture Validation" },
+        desc: {
+          zh: "内置静态分析与逻辑校验引擎，确保每一行生成的代码均符合工业级规范与安全策略。",
+          en: "Built-in static analysis and logic validation engine ensures every generated line of code meets industrial standards and security policies.",
+        },
+        statLabel: { zh: "安全合规", en: "Security Compliance" },
+        features: {
+          zh: ["静态代码分析", "安全漏洞拦截"],
+          en: ["Static code analysis", "Security vulnerability interception"],
+        },
+      },
+    ],
+  },
+
+  // CTA
+  cta: {
+    badge: { zh: "生产就绪", en: "Production Ready" },
+    title1: { zh: "告别漫长的研发周期.", en: "End the endless dev cycles." },
+    title2: { zh: "Just click compile.", en: "Just click compile." },
+    btnPrimary: { zh: "进入控制台", en: "Open Console" },
+    btnSecondary: { zh: "获取企业版白皮书", en: "Get Enterprise Whitepaper" },
+    bottomText: {
+      zh: "10 秒内开始生成 API · 开源核心",
+      en: "Start generating APIs in 10s · Open Source Core",
+    },
+  },
+
+  // Footer
+  footer: {
+    desc: {
+      zh: "全球首个真正意义上的由 AI 驱动的全栈系统合成引擎。告别代码搬运，拥抱自动生成式工程。",
+      en: "The world's first truly AI-driven full-stack system synthesis engine. Stop moving code, embrace generative engineering.",
+    },
+    ecosystem: { zh: "产品生态", en: "Ecosystem" },
+    ecosystemItems: {
+      zh: ["合成引擎 API", "基础设施部署", "企业私有化"],
+      en: ["Synthesis Engine API", "Infra Deployment", "Enterprise Private"],
+    },
+    developers: { zh: "开发者", en: "Developers" },
+    developerItems: {
+      zh: ["技术文档", "系统状态", "GitHub 开源"],
+      en: ["Documentation", "System Status", "GitHub Open Source"],
+    },
+  },
+} as const;
+
+export type TranslationKey = keyof typeof translations;
+export default translations;
