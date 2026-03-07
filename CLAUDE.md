@@ -82,5 +82,7 @@ git clone https://github.com/LeCod101/vibeartifact-docs.git doc_internal
 
 1. **测试和代码审计通过后再提交**：完成一组相关改动后，先跑测试、做代码审计，确认没问题再 `git add` + `git commit`
 2. **提交署名只用仓库主人**：commit 中不得出现 `Co-Authored-By`、`Claude`等字样，所有提交归属 git config 中配置的用户（LeCod101）
-3. **Commit message 用简洁中文或英文**，说明改了什么、为什么改
+3. **Commit message 格式**：`<type>: <中文描述>`，type 用英文小写，描述用中文说明本次改动内容
+   - 可用 type：`feat`(新功能) / `fix`(修复) / `refactor`(重构) / `docs`(文档) / `style`(格式) / `test`(测试) / `chore`(构建/工具) / `ci`(CI配置)
+   - 示例：`feat: 添加健康检查路由`、`fix: 修复 Redis 连接超时`、`chore: 初始化 M0 项目骨架`
 4. **不要修改 git config**：直接使用现有的 user.name / user.email 配置

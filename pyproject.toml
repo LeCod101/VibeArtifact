@@ -1,0 +1,42 @@
+[project]
+name = "vibeartifact"
+version = "0.1.0"
+description = "AI Product Engineering OS"
+requires-python = ">=3.12"
+
+[tool.uv.workspace]
+members = [
+    "services/api",
+    "services/worker",
+    "packages/py/ir_core",
+    "packages/py/platform_data",
+    "packages/py/agents",
+    "packages/py/runtime_tools",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.8",
+    "pytest>=8",
+    "pytest-asyncio>=0.24",
+    "httpx>=0.27",
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+
+[tool.pytest.ini_options]
+testpaths = [
+    "services/api/tests",
+    "services/worker/tests",
+    "packages/py/ir_core/tests",
+    "packages/py/platform_data/tests",
+    "packages/py/agents/tests",
+    "packages/py/runtime_tools/tests",
+]
+asyncio_mode = "auto"
+addopts = "--import-mode=importlib"

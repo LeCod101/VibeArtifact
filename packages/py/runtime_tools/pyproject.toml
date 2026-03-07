@@ -1,0 +1,16 @@
+[project]
+name = "runtime-tools"
+version = "0.1.0"
+description = "Runtime utilities: LLM adapters, locks, exporters, gates, cost"
+requires-python = ">=3.12"
+dependencies = [
+    "redis>=5.0",
+    "pydantic>=2.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["runtime_tools"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

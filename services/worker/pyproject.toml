@@ -1,0 +1,16 @@
+[project]
+name = "vibeartifact-worker"
+version = "0.1.0"
+description = "VibeArtifact Celery worker"
+requires-python = ">=3.12"
+dependencies = [
+    "celery>=5.4",
+    "redis>=5.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["vibeartifact_worker"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
