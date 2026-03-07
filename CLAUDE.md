@@ -77,6 +77,10 @@ git clone https://github.com/LeCod101/vibeartifact-docs.git doc_internal
 3. 不抢做 Phase 2 的功能
 4. 每完成一个 Milestone，更新 `doc_internal/devlog/PROGRESS.md`
 5. 每个功能块完成后，在对应的 `M*.md` 里打勾并记录遇到的问题
+6. **每次代码改动提交后，必须同步更新 devlog**：
+   - 更新 `doc_internal/devlog/PROGRESS.md`（总进度表）
+   - 更新当前 Milestone 对应的 `doc_internal/devlog/M*.md`（打勾 + 记录改动摘要和遇到的问题）
+   - 这一步不可跳过，是提交流程的一部分
 
 ## Git 提交规则
 
