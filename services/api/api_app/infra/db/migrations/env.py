@@ -4,12 +4,9 @@ import asyncio
 from logging.config import fileConfig
 
 from alembic import context
+from platform_data.models import Base  # noqa: F401
 from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import async_engine_from_config
-
-# Import Base so autogenerate can see all registered models.
-# Models are auto-registered when their modules are imported via __init__.py.
-from platform_data.models import Base  # noqa: F401
 
 config = context.config
 
