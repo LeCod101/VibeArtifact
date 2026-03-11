@@ -3,6 +3,7 @@ doc_internal/
 
 # Claude Code
 .claude/
+!.dev-agents/**/.claude/
 
 # IDE
 .idea/
@@ -43,3 +44,16 @@ build/
 
 # uv
 uv.lock
+
+# dev-agents 运行时产物（框架本身提交，运行产物排除）
+.dev-agents/shared/status.json
+.dev-agents/shared/notifications.json
+.dev-agents/shared/tasks/*.md
+.dev-agents/shared/docs/*
+!.dev-agents/shared/docs/.gitkeep
+.dev-agents/shared/designs/*
+!.dev-agents/shared/designs/.gitkeep
+.dev-agents/shared/reviews/*.md
+.dev-agents/shared/.cache/*
+!.dev-agents/shared/.cache/.gitkeep
+.dev-agents/shared/.notification_cache.json
