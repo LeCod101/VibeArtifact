@@ -10,7 +10,14 @@ dependencies = [
     "asyncpg>=0.30",
     "redis>=5.0",
     "pydantic-settings>=2.0",
+    "alembic>=1.13",
+    "platform-data",
+    "passlib[bcrypt]>=1.7",
+    "python-jose[cryptography]>=3.3",
 ]
+
+[tool.uv.sources]
+platform-data = { workspace = true }
 
 [tool.hatch.build.targets.wheel]
 packages = ["vibeartifact_api"]
