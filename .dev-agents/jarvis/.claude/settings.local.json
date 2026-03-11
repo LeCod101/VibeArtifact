@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c \"from platform_data.models import Base; print\\(f''Tables: {len\\(Base.metadata.tables\\)}''\\); print\\(list\\(Base.metadata.tables.keys\\(\\)\\)\\)\")",
+      "Bash(python -m ruff check:*)",
+      "Bash(docker compose:*)",
+      "Bash(python:*)"
+    ]
+  }
+}
