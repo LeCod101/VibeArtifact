@@ -5,6 +5,15 @@
 SESSION="vibeartifact-agents"
 DIR="$(cd "$(dirname "$0")/.dev-agents" && pwd)"
 
+# 检查是否为 Windows 环境（非 WSL）
+if [[ "$(uname -s)" == MINGW* ]] || [[ "$(uname -s)" == MSYS* ]] || [[ "$(uname -s)" == CYGWIN* ]]; then
+    echo "检测到 Windows 环境，请使用 PowerShell 版本:"
+    echo ""
+    echo "  powershell -ExecutionPolicy Bypass -File panel.ps1"
+    echo ""
+    exit 1
+fi
+
 # 检查tmux
 if ! command -v tmux &> /dev/null; then
     echo "错误: 需要安装tmux"
@@ -12,7 +21,6 @@ if ! command -v tmux &> /dev/null; then
     echo "安装命令:"
     echo "  macOS:   brew install tmux"
     echo "  Ubuntu:  sudo apt install tmux"
-    echo "  Windows: 建议使用 WSL 后安装 tmux"
     exit 1
 fi
 
