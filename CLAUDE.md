@@ -70,6 +70,18 @@ git clone https://github.com/LeCod101/vibeartifact-docs.git doc_internal
 - 进度总表 → `doc_internal/devlog/PROGRESS.md`
 - Milestone 日志 → `doc_internal/devlog/M*.md`
 
+## 代码注释规则
+
+1. **所有代码必须使用中文注释**：函数、类、模块、关键逻辑都要有中文注释，让非英语母语开发者能快速理解
+2. **禁止使用尾行注释**：注释必须写在代码上方单独一行，不允许写在代码行末尾
+3. **注释内容**：
+   - 模块顶部：用中文说明该模块的职责
+   - 类：用中文说明类的用途
+   - 函数/方法：用中文说明功能、参数含义、返回值
+   - 关键逻辑：用中文说明为什么这样做
+4. **不需要注释的情况**：一目了然的赋值语句、import 语句
+5. **docstring 语言**：Python docstring 用中文，TypeScript JSDoc 用中文
+
 ## 开发规则
 
 1. 先跑通闭环，再优化
