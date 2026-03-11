@@ -1,0 +1,16 @@
+{
+  "project": "VibeArtifact",
+  "current_milestone": "M1",
+  "last_updated": "2026-03-11T17:54:57+08:00",
+  "team": {
+    "max": { "status": "idle", "current_task": null },
+    "ella": { "status": "idle", "current_task": null },
+    "jarvis": { "status": "idle", "current_task": null },
+    "kyle": { "status": "idle", "current_task": null }
+  },
+  "completed_tasks": [
+    "M1-阶段1: Base + Mixin + session factory + Alembic 环境 (d7edb55, fbee8eb)",
+    "M1-阶段2: 全部 ORM 模型 17 张表 + migration 28f6cc24530e 执行完成，ruff lint 通过"
+  ],
+  "notifications": []
+}
