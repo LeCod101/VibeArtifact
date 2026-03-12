@@ -7,13 +7,10 @@
 
 from datetime import datetime, timedelta, timezone
 
+import bcrypt
 from jose import jwt
-from passlib.context import CryptContext
 
 from api_app.core.config import settings
-
-# bcrypt 哈希上下文，自动处理盐值生成和算法升级
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 def hash_password(plain: str) -> str:
@@ -25,7 +22,9 @@ def hash_password(plain: str) -> str:
     返回:
         bcrypt 哈希后的密码字符串
     """
-    return pwd_context.hash(plain)
+    return bcrypt.hashpw(
+        plain.encode("utf-8"), bcrypt.gensalt()
+    ).decode("utf-8")
 
 
 def verify_password(plain: str, hashed: str) -> bool:
@@ -38,7 +37,9 @@ def verify_password(plain: str, hashed: str) -> bool:
     返回:
         匹配返回 True，否则返回 False
     """
-    return pwd_context.verify(plain, hashed)
+    return bcrypt.checkpw(
+        plain.encode("utf-8"), hashed.encode("utf-8")
+    )
 
 
 def create_access_token(
