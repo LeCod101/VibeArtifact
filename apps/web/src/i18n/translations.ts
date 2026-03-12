@@ -192,6 +192,75 @@ const translations = {
       en: ["Documentation", "System Status", "GitHub Open Source"],
     },
   },
+
+  /* ============ 认证相关 ============ */
+  auth: {
+    loginTitle: { zh: "登录", en: "Sign In" },
+    registerTitle: { zh: "注册", en: "Sign Up" },
+    email: { zh: "邮箱", en: "Email" },
+    emailPlaceholder: { zh: "请输入邮箱", en: "Enter your email" },
+    password: { zh: "密码", en: "Password" },
+    passwordPlaceholder: { zh: "请输入密码", en: "Enter your password" },
+    confirmPassword: { zh: "确认密码", en: "Confirm Password" },
+    confirmPasswordPlaceholder: { zh: "再次输入密码", en: "Re-enter your password" },
+    displayName: { zh: "显示名称", en: "Display Name" },
+    displayNamePlaceholder: { zh: "请输入显示名称", en: "Enter your display name" },
+    loginBtn: { zh: "登录", en: "Sign In" },
+    registerBtn: { zh: "注册", en: "Sign Up" },
+    noAccount: { zh: "还没有账号？", en: "Don't have an account?" },
+    hasAccount: { zh: "已有账号？", en: "Already have an account?" },
+    goRegister: { zh: "注册", en: "Sign Up" },
+    goLogin: { zh: "登录", en: "Sign In" },
+    loginSuccess: { zh: "登录成功", en: "Login successful" },
+    registerSuccess: { zh: "注册成功", en: "Registration successful" },
+    passwordMismatch: { zh: "两次密码输入不一致", en: "Passwords do not match" },
+    logoutBtn: { zh: "退出登录", en: "Sign Out" },
+  },
+
+  /* ============ 仪表盘 ============ */
+  dashboard: {
+    title: { zh: "我的项目", en: "My Projects" },
+    newProject: { zh: "新建项目", en: "New Project" },
+    emptyTitle: { zh: "还没有项目", en: "No projects yet" },
+    emptyDesc: { zh: "创建你的第一个项目吧", en: "Create your first project" },
+    sidebarDashboard: { zh: "仪表盘", en: "Dashboard" },
+  },
+
+  /* ============ 项目相关 ============ */
+  project: {
+    createTitle: { zh: "新建项目", en: "Create Project" },
+    nameLabel: { zh: "项目名称", en: "Project Name" },
+    namePlaceholder: { zh: "请输入项目名称", en: "Enter project name" },
+    descLabel: { zh: "项目描述", en: "Description" },
+    descPlaceholder: { zh: "简要描述你的项目（可选）", en: "Briefly describe your project (optional)" },
+    createBtn: { zh: "创建", en: "Create" },
+    cancelBtn: { zh: "取消", en: "Cancel" },
+    createSuccess: { zh: "项目创建成功", en: "Project created" },
+    status: {
+      active: { zh: "进行中", en: "Active" },
+      archived: { zh: "已归档", en: "Archived" },
+    },
+    conversations: { zh: "对话", en: "Conversations" },
+    newConversation: { zh: "新建对话", en: "New Conversation" },
+    conversationTitle: { zh: "对话标题", en: "Conversation Title" },
+    conversationPlaceholder: { zh: "输入对话标题（可选）", en: "Enter conversation title (optional)" },
+    noConversations: { zh: "暂无对话", en: "No conversations" },
+    noMessages: { zh: "暂无消息，发送第一条消息吧", en: "No messages yet, send the first one" },
+    messagePlaceholder: { zh: "输入消息...", en: "Type a message..." },
+    sendBtn: { zh: "发送", en: "Send" },
+    createConversationSuccess: { zh: "对话创建成功", en: "Conversation created" },
+  },
+
+  /* ============ 通用 ============ */
+  common: {
+    loading: { zh: "加载中...", en: "Loading..." },
+    error: { zh: "出错了", en: "Something went wrong" },
+    retry: { zh: "重试", en: "Retry" },
+    back: { zh: "返回", en: "Back" },
+    confirm: { zh: "确认", en: "Confirm" },
+    cancel: { zh: "取消", en: "Cancel" },
+    language: { zh: "语言", en: "Language" },
+  },
 } as const;
 
 export type TranslationKey = keyof typeof translations;
