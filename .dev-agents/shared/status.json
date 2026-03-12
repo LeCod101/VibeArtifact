@@ -1,8 +1,8 @@
 {
   "project": "VibeArtifact",
   "current_milestone": "M1",
-  "current_phase": "阶段 1-5 代码完成，剩余测试",
-  "last_updated": "2026-03-12T18:10:00+08:00",
+  "current_phase": "✅ 已完成（5 阶段代码 + 39 项测试全部通过）",
+  "last_updated": "2026-03-12T19:30:00+08:00",
   "team": {
     "max": { "status": "idle", "current_task": null },
     "ella": { "status": "idle", "current_task": null },
@@ -14,11 +14,11 @@
     "M1-阶段2: 全部 ORM 模型 17 张表 + migration (7dc693d)",
     "M1-阶段3: 认证系统 (1d68131)",
     "M1-阶段4: Repository + Service + CRUD 路由 (3e85813)",
-    "M1-阶段5: LeaseLockService Redis 子树级租约锁 (5706e40)"
+    "M1-阶段5: LeaseLockService Redis 子树级租约锁 (5706e40)",
+    "M1-任务18: 39 项测试全部通过 (62ca32f)"
   ],
   "next_tasks": [
-    "M1-任务18: 写测试",
-    "M1 收尾 → 进入 M2 IR Core v1"
+    "进入 M2 IR Core v1（typed props、边、操作原语、validators）"
   ],
   "notifications": []
 }
