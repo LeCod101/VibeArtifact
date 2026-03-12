@@ -1,8 +1,8 @@
 {
   "project": "VibeArtifact",
   "current_milestone": "M1",
-  "current_phase": "阶段5: Lease Lock Service",
-  "last_updated": "2026-03-12T17:30:00+08:00",
+  "current_phase": "阶段 1-5 代码完成，剩余测试",
+  "last_updated": "2026-03-12T18:10:00+08:00",
   "team": {
     "max": { "status": "idle", "current_task": null },
     "ella": { "status": "idle", "current_task": null },
@@ -11,13 +11,14 @@
   },
   "completed_tasks": [
     "M1-阶段1: Base + Mixin + session factory + Alembic 环境 (d7edb55, fbee8eb)",
-    "M1-阶段2: 全部 ORM 模型 17 张表 + migration 28f6cc24530e 执行完成，ruff lint 通过",
-    "M1-阶段3: 认证系统（security.py + deps + routes/auth + schemas/auth + JWT 配置）(1d68131)",
-    "M1-阶段4: Repository + Service + CRUD 路由（BaseRepo + 7 Repo + 4 Service + 7 端点）(3e85813)"
+    "M1-阶段2: 全部 ORM 模型 17 张表 + migration (7dc693d)",
+    "M1-阶段3: 认证系统 (1d68131)",
+    "M1-阶段4: Repository + Service + CRUD 路由 (3e85813)",
+    "M1-阶段5: LeaseLockService Redis 子树级租约锁 (5706e40)"
   ],
   "next_tasks": [
-    "M1-阶段5: LeaseLockService（Redis 子树级租约锁）",
-    "M1-阶段5 后: 写测试，M1 收尾"
+    "M1-任务18: 写测试",
+    "M1 收尾 → 进入 M2 IR Core v1"
   ],
   "notifications": []
 }
