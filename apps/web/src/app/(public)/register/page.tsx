@@ -19,7 +19,6 @@ import {
   Lock,
   User,
   CheckCircle2,
-  Sparkles,
 } from "lucide-react";
 import { useLocale } from "@/i18n/context";
 import t from "@/i18n/translations";
@@ -115,9 +114,25 @@ export default function RegisterPage() {
         <div className="relative bg-[#050508]/95 backdrop-blur-3xl border border-white/10 rounded-3xl p-10 shadow-2xl overflow-hidden">
           {/* 头部信息 */}
           <div className="flex flex-col items-center mb-10 text-center">
-            <div className="w-14 h-14 bg-gradient-to-br from-cyan-500 to-indigo-600 rounded-xl flex items-center justify-center mb-6 shadow-xl shadow-cyan-500/20 -rotate-3">
-              <Sparkles className="text-white w-8 h-8" />
-            </div>
+            <svg viewBox="0 0 300 250" className="h-20 w-auto text-white mb-6">
+              <g fill="currentColor">
+                <polygon points="85,40 119,108 109,128 65,40" />
+                <polygon points="165,40 185,40 235,140 215,140 175,60 125,160 115,140 165,40" />
+                <polygon points="150.5,105 199.5,105 207,120 143,120" />
+              </g>
+              <text
+                x="150"
+                y="215"
+                fontFamily="'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif"
+                fontSize="32"
+                fontWeight="600"
+                letterSpacing="-0.02em"
+                textAnchor="middle"
+                fill="currentColor"
+              >
+                VibeArtifact
+              </text>
+            </svg>
             <h2 className="text-3xl font-black text-white uppercase italic tracking-widest">
               Initial Account
             </h2>

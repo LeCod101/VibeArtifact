@@ -145,17 +145,15 @@ export default function Home() {
               <span className="hover:text-white transition-colors cursor-pointer">
                 {L(t.nav.pricing, locale)}
               </span>
+              <Link
+                href="/login"
+                className="hover:text-white transition-colors"
+              >
+                {L(t.nav.login, locale)}
+              </Link>
             </div>
 
-            {/* Language Toggle */}
-            {/* 登录入口 */}
-            <Link
-              href="/login"
-              className="text-[11px] font-black uppercase tracking-widest text-slate-400 hover:text-white transition-colors"
-            >
-              {L(t.nav.login, locale)}
-            </Link>
-
+            {/* 语言切换 */}
             <button
               onClick={toggleLocale}
               className="flex items-center gap-2 h-9 px-4 rounded-full border border-white/10 bg-white/[0.03] text-sm font-bold text-slate-400 hover:text-white hover:border-white/40 transition-all"
