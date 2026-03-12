@@ -68,6 +68,16 @@ body {
   animation: gradient-x 6s ease infinite;
 }
 
+/* 主题渐变文字 - indigo/purple/cyan */
+.text-gradient-indigo {
+  background: linear-gradient(135deg, #818cf8 0%, #a78bfa 40%, #22d3ee 100%);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gradient-x 6s ease infinite;
+}
+
 /* ============ Glass ============ */
 .bg-glass {
   background: rgba(255, 255, 255, 0.02);
@@ -93,6 +103,19 @@ body {
 
 .glow-text {
   text-shadow: 0 0 20px rgba(0, 210, 255, 0.5);
+}
+
+/* indigo 发光效果 */
+.glow-indigo {
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+}
+
+.glow-border-indigo {
+  box-shadow: 0 0 40px rgba(99, 102, 241, 0.1), inset 0 0 40px rgba(99, 102, 241, 0.02);
+}
+
+.glow-text-indigo {
+  text-shadow: 0 0 20px rgba(99, 102, 241, 0.5);
 }
 
 /* ============ Keyframes ============ */

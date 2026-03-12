@@ -1,8 +1,8 @@
 /**
  * 公开页面布局 - 登录/注册共享
  *
- * 深色背景居中卡片布局，右上角语言切换。
  * 已登录用户自动跳转到 /dashboard。
+ * 右上角语言切换，不强制背景色和居中（由各页面自行控制）。
  */
 "use client";
 
@@ -11,7 +11,6 @@ import { useRouter } from "next/navigation";
 import { Languages } from "lucide-react";
 import { useLocale } from "@/i18n/context";
 import { useAuthStore } from "@/stores/auth-store";
-import { Button } from "@/components/ui/button";
 
 export default function PublicLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
@@ -26,18 +25,16 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
   }, [accessToken, router]);
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center relative px-4">
+    <div className="relative">
       {/* 语言切换按钮 */}
-      <div className="absolute top-6 right-6">
-        <Button
-          variant="outline"
-          size="sm"
+      <div className="fixed top-10 right-10 z-30">
+        <button
           onClick={toggleLocale}
-          className="gap-2"
+          className="flex items-center gap-2 h-9 px-4 rounded-full border border-white/10 bg-white/[0.03] text-sm font-bold text-slate-400 hover:text-white hover:border-white/40 transition-all backdrop-blur-md"
         >
           <Languages size={14} />
           {locale === "zh" ? "EN" : "中文"}
-        </Button>
+        </button>
       </div>
 
       {children}

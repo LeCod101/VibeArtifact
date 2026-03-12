@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Image from "next/image";
+import Link from "next/link";
 import {
   ArrowRight,
   Github,
@@ -107,21 +107,22 @@ export default function Home() {
   const tabLabels: readonly string[] = L(t.interactive.tabs, locale);
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-slate-300 font-sans selection:bg-white/40 overflow-x-hidden antialiased tracking-tight">
+    <div className="min-h-screen bg-[#020205] text-slate-300 font-sans selection:bg-indigo-500/40 overflow-x-hidden antialiased tracking-tight">
       {/* ===== Background ===== */}
-      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden perspective-1000">
-        <div className="absolute top-[-20%] left-[-10%] w-[80%] h-[80%] bg-white/5 blur-[150px] rounded-full mix-blend-screen animate-pulse-slow" />
+      {/* ===== 背景极光 + 点阵 ===== */}
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        <div className="absolute top-[-10%] left-[-10%] w-[70%] h-[70%] bg-indigo-600/10 blur-[180px] rounded-full mix-blend-screen animate-pulse-slow" />
         <div
-          className="absolute bottom-[-20%] right-[-10%] w-[70%] h-[70%] bg-slate-500/10 blur-[150px] rounded-full mix-blend-screen animate-float"
+          className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-purple-600/15 blur-[150px] rounded-full mix-blend-screen animate-float"
           style={{ animationDelay: "2s" }}
         />
-        <div className="absolute inset-0 top-[40%] bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:60px_60px] [mask-image:linear-gradient(to_bottom,transparent_0%,black_100%)] transform-gpu rotate-x-[60deg] scale-150 animate-grid-flow" />
+        <div className="absolute inset-0 bg-[radial-gradient(#ffffff08_1px,transparent_1px)] bg-[size:32px_32px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
       </div>
 
       {/* ===== Nav ===== */}
       <nav
         className={`fixed top-0 w-full z-[100] transition-all duration-700 ${scrolled
-          ? "py-4 bg-[#0a0a0a]/70 backdrop-blur-2xl border-b border-white/5 shadow-[0_4px_30px_rgba(0,0,0,0.5)]"
+          ? "py-4 bg-[#020205]/70 backdrop-blur-2xl border-b border-white/5 shadow-[0_4px_30px_rgba(0,0,0,0.5)]"
           : "py-8 bg-transparent"
           }`}
       >
@@ -147,6 +148,14 @@ export default function Home() {
             </div>
 
             {/* Language Toggle */}
+            {/* 登录入口 */}
+            <Link
+              href="/login"
+              className="text-[11px] font-black uppercase tracking-widest text-slate-400 hover:text-white transition-colors"
+            >
+              {L(t.nav.login, locale)}
+            </Link>
+
             <button
               onClick={toggleLocale}
               className="flex items-center gap-2 h-9 px-4 rounded-full border border-white/10 bg-white/[0.03] text-sm font-bold text-slate-400 hover:text-white hover:border-white/40 transition-all"
@@ -155,7 +164,7 @@ export default function Home() {
               {locale === "zh" ? "EN" : "中文"}
             </button>
 
-            <button className="relative group overflow-hidden h-11 px-8 bg-white text-black text-[12px] font-black uppercase tracking-widest rounded-full flex items-center gap-2 hover:shadow-[0_0_30px_rgba(255,255,255,0.3)] transition-all active:scale-95">
+            <button className="relative group overflow-hidden h-11 px-8 bg-indigo-600 text-white text-[12px] font-black uppercase tracking-widest rounded-full flex items-center gap-2 hover:shadow-[0_0_30px_rgba(99,102,241,0.4)] transition-all active:scale-95 border border-white/20 shadow-lg shadow-indigo-600/20">
               {L(t.nav.cta, locale)}{" "}
               <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
             </button>
@@ -172,28 +181,28 @@ export default function Home() {
           <div className="flex flex-col items-center text-center">
             <a
               href="#"
-              className="group inline-flex items-center gap-3 px-4 py-2 rounded-full bg-white/[0.03] border border-white/10 backdrop-blur-md mb-12 hover:border-white/40 transition-colors"
+              className="group inline-flex items-center gap-3 px-4 py-2 rounded-full bg-indigo-500/10 border border-indigo-500/20 backdrop-blur-md mb-12 hover:border-indigo-500/40 transition-colors"
             >
-              <span className="flex items-center justify-center w-5 h-5 rounded-full bg-white/10">
-                <Zap size={12} className="text-white fill-white animate-pulse" />
+              <span className="flex items-center justify-center w-5 h-5 rounded-full bg-indigo-500/20">
+                <Zap size={12} className="text-indigo-400 fill-indigo-400 animate-pulse" />
               </span>
-              <span className="text-xs font-bold text-slate-300 group-hover:text-white transition-colors">
+              <span className="text-xs font-bold text-indigo-300 group-hover:text-white transition-colors">
                 {L(t.hero.badge, locale)}
               </span>
               <ChevronRight
                 size={14}
-                className="text-slate-500 group-hover:text-white group-hover:translate-x-1 transition-all"
+                className="text-indigo-500 group-hover:text-white group-hover:translate-x-1 transition-all"
               />
             </a>
 
             <h1 className="text-6xl md:text-[100px] font-black tracking-[-0.04em] leading-[0.95] mb-12">
-              <span className="text-gradient-silver drop-shadow-lg">
+              <span className="text-white drop-shadow-lg">
                 {L(t.hero.title1, locale)}
               </span>
               <br />
               <div className="relative inline-block mt-4">
-                <span className="absolute -inset-2 bg-white/10 blur-2xl rounded-full" />
-                <span className="relative text-gradient-silver italic">
+                <span className="absolute -inset-2 bg-indigo-500/10 blur-2xl rounded-full" />
+                <span className="relative text-gradient-indigo italic">
                   {L(t.hero.title2, locale)}
                 </span>
               </div>
@@ -255,7 +264,7 @@ export default function Home() {
           className={`max-w-[1200px] mx-auto px-6 relative z-10 transition-all duration-1000 delay-200 transform ${visibleSections.interactive ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"
             }`}
         >
-          <div className="relative group p-[1px] rounded-[2.5rem] bg-gradient-to-br from-white/50/30 via-purple-500/10 to-[#00d2ff]/30 glow-border-cyan overflow-hidden">
+          <div className="relative group p-[1px] rounded-[2.5rem] bg-gradient-to-br from-indigo-500/30 via-purple-500/10 to-cyan-500/30 glow-border-indigo overflow-hidden">
             {/* Scan line */}
             <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-white to-transparent animate-scan z-20 opacity-80" />
 
@@ -313,7 +322,7 @@ export default function Home() {
                       <div className="text-[10px] font-mono text-slate-400">98%</div>
                     </div>
                     <div className="w-full h-1.5 bg-slate-800/50 rounded-full overflow-hidden">
-                      <div className="w-[98%] h-full bg-gradient-to-r from-white/50 via-purple-500 to-[#00d2ff] animate-gradient-x" />
+                      <div className="w-[98%] h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-cyan-500 animate-gradient-x" />
                     </div>
                   </div>
                 </div>
@@ -646,23 +655,23 @@ export default function Home() {
 
       {/* ===== CTA ===== */}
       <section id="cta" className="py-48 relative overflow-hidden text-center border-t border-white/5">
-        <div className="absolute inset-0 bg-[#0a0a0a]" />
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[1000px] h-[400px] bg-gradient-to-t from-white/50/20 to-transparent blur-[100px] pointer-events-none" />
+        <div className="absolute inset-0 bg-[#020205]" />
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[1000px] h-[400px] bg-gradient-to-t from-indigo-500/20 to-transparent blur-[100px] pointer-events-none" />
         <div className="absolute inset-x-0 bottom-0 h-[400px] bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:linear-gradient(to_top,black_0%,transparent_100%)] pointer-events-none" />
 
         <div
           className={`max-w-[1200px] mx-auto px-6 relative z-10 transition-all duration-1000 transform ${visibleSections.cta ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"
             }`}
         >
-          <div className="inline-block p-[1px] rounded-full bg-gradient-to-r from-transparent via-purple-500/50 to-transparent mb-8">
-            <div className="px-6 py-2 rounded-full bg-[#0a0a0a] border border-white/5 text-[11px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-slate-500 animate-pulse" />{" "}
+          <div className="inline-block p-[1px] rounded-full bg-gradient-to-r from-transparent via-indigo-500/50 to-transparent mb-8">
+            <div className="px-6 py-2 rounded-full bg-[#020205] border border-white/5 text-[11px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />{" "}
               {L(t.cta.badge, locale)}
             </div>
           </div>
           <h2 className="text-5xl md:text-[80px] font-black tracking-[-0.04em] mb-12 leading-tight">
             <span className="text-white">{L(t.cta.title1, locale)}</span> <br />
-            <span className="text-gradient-silver italic">{L(t.cta.title2, locale)}</span>
+            <span className="text-gradient-indigo italic">{L(t.cta.title2, locale)}</span>
           </h2>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
             <button className="h-16 px-14 bg-white text-black rounded-2xl font-black text-xs uppercase tracking-widest hover:scale-105 transition-transform shadow-[0_0_40px_rgba(255,255,255,0.1)] active:scale-95 flex items-center gap-2">
@@ -679,7 +688,7 @@ export default function Home() {
       </section>
 
       {/* ===== Footer ===== */}
-      <footer className="py-16 border-t border-white/5 bg-[#050508] relative z-10">
+      <footer className="py-16 border-t border-white/5 bg-[#010103] relative z-10">
         <div className="max-w-[1200px] mx-auto px-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
             <div className="md:col-span-2 space-y-6">

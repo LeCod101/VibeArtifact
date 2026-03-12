@@ -7,6 +7,7 @@ const translations = {
     docs: { zh: "文档", en: "Docs" },
     pricing: { zh: "定价", en: "Pricing" },
     cta: { zh: "立即构建", en: "Start Building" },
+    login: { zh: "登录", en: "Sign In" },
   },
 
   // Hero
