@@ -57,3 +57,4 @@ uv.lock
 .dev-agents/shared/.cache/*
 !.dev-agents/shared/.cache/.gitkeep
 .dev-agents/shared/.notification_cache.json
+.dev-tools/
