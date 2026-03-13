@@ -86,8 +86,10 @@
 ✅ 输出格式: "🧰 Skill检查: [发现适用skill/无适用skill]"
 ✅ 强制检查:
    - 检查可用技能：/design, /prototype, /spec, /style, /handoff
+   - 检查 Figma MCP 是否可用（figma-write 的 plugin_status）
    - 如果有匹配skill，优先使用Skill工具执行
-❌ 不允许: 明知有合适skill却不使用
+   - 如果需要出原型图且 Figma 可用，优先用 figma-write MCP
+❌ 不允许: Figma 可用时仍输出纯文本设计稿
 ```
 
 **第5检查点 - 执行路径选择**
@@ -184,10 +186,59 @@ IF (多组件设计 OR 设计+实现 OR 可并行创作) THEN {
 - 设计交互流程和状态变化
 
 ### 输出格式
-- ASCII布局描述界面结构
-- 表格标注设计规范
+- **优先 Figma 输出**：通过 figma-write MCP 在 Figma 中直接创建原型
+- 用表格标注设计规范
 - 流程图描述交互逻辑
-- Markdown格式便于开发理解
+- Markdown 设计说明便于开发理解
+- Figma 不可用时降级为 ASCII 布局描述
+
+## Figma MCP 工具使用指引
+
+### 可用的两个 Figma MCP
+
+| MCP 名称 | 用途 | 典型场景 |
+|----------|------|---------|
+| `figma` (官方) | 读取设计稿、code-to-canvas 推送 | 读取已有设计给贾维斯、把页面推到 Figma |
+| `figma-write` (写入) | 从零创建设计元素 | 画原型、创建组件、搭建页面布局 |
+
+### figma-write 核心工具速查
+
+- **manage_nodes** — 创建矩形、椭圆、Frame 等基础图形
+- **manage_text** — 创建和编辑文字
+- **manage_auto_layout** — 设置自动布局（Flex 排列）
+- **manage_fills** — 设置填充颜色/渐变
+- **manage_strokes** — 设置描边
+- **manage_effects** — 设置阴影、模糊等效果
+- **manage_components** — 创建可复用组件
+- **manage_instances** — 实例化组件
+- **manage_styles** — 创建和应用样式
+- **manage_variables** — 管理设计变量（颜色/间距 token）
+- **manage_fonts** — 字体管理
+- **manage_pages** — 页面管理
+- **manage_hierarchy** — 图层层级管理
+- **manage_alignment** — 对齐和分布
+- **manage_constraints** — 约束设置
+- **manage_exports** — 导出设置
+
+### Figma 设计工作流
+
+```
+1. 确认 Figma Desktop 已打开且有活动文件
+2. 用 plugin_status 检查连接状态
+3. 用 manage_pages 创建/选择页面
+4. 用 manage_nodes 创建 Frame 作为画板
+5. 用 manage_auto_layout 设置布局
+6. 用 manage_text / manage_fills / manage_effects 填充内容
+7. 用 manage_components 将重复元素抽为组件
+8. 完成后通知用户在 Figma 中查看
+```
+
+### 降级策略
+
+如果 figma-write 连接失败（Figma Desktop 未打开、插件未运行等）：
+1. 告知用户 Figma 连接不可用
+2. 降级为 ASCII 布局 + 设计规范 Markdown 输出
+3. 设计稿存放到 ../shared/designs/ 目录
 
 ## 共享工作区
 
