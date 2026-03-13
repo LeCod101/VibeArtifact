@@ -73,12 +73,64 @@ const translations = {
 
   // Capabilities
   capabilities: {
-    sectionTitle1: { zh: "为绝对可靠性", en: "Engineered for" },
-    sectionTitle2: { zh: "而设计。", en: "Absolute Reliability." },
-    sectionDesc: {
-      zh: "不仅生成代码，更保障架构级的安全与高性能。超越传统的 AI 辅助，这是可信度100%的代码生成自动化引擎。",
-      en: "Beyond code generation — architectural security and high performance guaranteed. Surpassing traditional AI assistance, this is a 100% trustworthy automated code generation engine.",
+    sectionTitle: {
+      zh: "交付所需，一应俱全",
+      en: "Everything You Need to Ship",
     },
+    sectionDesc: {
+      zh: "一站式 AI 产品工程平台，从创意到部署全链路覆盖。",
+      en: "A complete AI-powered product engineering platform with everything from ideation to deployment.",
+    },
+    cards: [
+      {
+        suffix: { zh: "x", en: "x" },
+        title: { zh: "AI 驱动代码生成", en: "AI-Powered Code Generation" },
+        desc: {
+          zh: "从自然语言生成生产级 Next.js + FastAPI 代码，全栈输出含测试用例。",
+          en: "Generate production-ready Next.js + FastAPI code from natural language. Full-stack output with tests.",
+        },
+      },
+      {
+        suffix: { zh: "%", en: "%" },
+        title: { zh: "智能架构设计", en: "Smart Architecture" },
+        desc: {
+          zh: "根据产品描述自动生成数据库 Schema、API 路由和系统架构图。",
+          en: "Auto-generates database schemas, API routes, and system diagrams from your product description.",
+        },
+      },
+      {
+        suffix: { zh: "分钟", en: "min" },
+        title: { zh: "极速部署", en: "Instant Deployment" },
+        desc: {
+          zh: "一键 Docker Compose 部署到生产环境，零配置 CI/CD 管线。",
+          en: "One-click deploy to production with Docker Compose. Zero config CI/CD pipeline included.",
+        },
+      },
+      {
+        suffix: { zh: "%", en: "%" },
+        title: { zh: "可视化文档", en: "Visual Documentation" },
+        desc: {
+          zh: "自动生成 Mermaid 图表、ER 图和架构文档，始终与代码库同步。",
+          en: "Auto-generated Mermaid diagrams, ERDs, and architecture docs. Always in sync with your codebase.",
+        },
+      },
+      {
+        suffix: { zh: " 智能体", en: " Agents" },
+        title: { zh: "多智能体协作", en: "Multi-Agent Collaboration" },
+        desc: {
+          zh: "专业 AI 智能体协同工作：规划师、架构师、编码师、测试师和部署师。",
+          en: "Specialized AI agents work together: Planner, Architect, Coder, Tester, and Deployer.",
+        },
+      },
+      {
+        suffix: { zh: "", en: "" },
+        title: { zh: "内置版本控制", en: "Version Control Built-in" },
+        desc: {
+          zh: "基于快照的版本管理，支持分支与合并，永不丢失工作成果。",
+          en: "Snapshot-based versioning with branch and merge. Never lose your work.",
+        },
+      },
+    ],
     items: [
       {
         title: { zh: "意图解码", en: "Intent Decoding" },
