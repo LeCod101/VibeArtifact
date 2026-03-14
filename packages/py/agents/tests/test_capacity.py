@@ -14,8 +14,8 @@
 """
 
 import pytest
-from agents.capacity.calculator import CapacityCalculator, CapacityReport, DimensionCount
-from agents.capacity.rules import CapacityDimension, CapacityRule, DEFAULT_RULES
+from agents.capacity.calculator import CapacityCalculator
+from agents.capacity.rules import DEFAULT_RULES, CapacityDimension
 from agents.capacity.tiers import (
     TIER_BUDGETS,
     CapacityTier,
@@ -25,7 +25,6 @@ from agents.capacity.tiers import (
 )
 from agents.schemas.high_level import ScopeDraft, ScopeItem
 from ir_core.schema.node_types import Priority
-
 
 # ============================================================
 # 测试辅助函数

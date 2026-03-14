@@ -17,7 +17,6 @@ from ir_core.schema.edge_types import EdgeType
 from ir_core.schema.node_types import NodeType, Priority
 from ir_core.schema.operation_types import OperationType
 
-
 # ============================================================
 # 测试辅助函数
 # ============================================================

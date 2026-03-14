@@ -7,13 +7,13 @@ M5 替换 _mock_analyze / _mock_contract 为真实 LLM 调用即可。
 
 from uuid import UUID
 
+from agents.capacity.calculator import CapacityCalculator, CapacityReport
+from agents.schemas.contraction import ContractionDecision, DeferredFeature
+from agents.schemas.high_level import ScopeDraft, ScopeItem
 from fastapi import APIRouter, Depends, HTTPException, status
 from platform_data.models.user import User
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from agents.capacity.calculator import CapacityCalculator, CapacityReport
-from agents.schemas.contraction import ContractionDecision, DeferredFeature
-from agents.schemas.high_level import ScopeDraft, ScopeItem
 from api_app.api.deps.auth import get_current_user
 from api_app.api.deps.db import get_db
 from api_app.api.schemas.generation import (
@@ -22,9 +22,9 @@ from api_app.api.schemas.generation import (
     CapacityReportResponse,
     ConfirmScopeRequest,
     ConfirmScopeResponse,
+    ContractionDecisionResponse,
     ContractRequest,
     ContractResponse,
-    ContractionDecisionResponse,
     DeferredFeatureResponse,
     DimensionCountResponse,
     ScopeDraftResponse,

@@ -29,7 +29,8 @@ CONTRACTION_ROLE_PROMPT: str = """你是 Contraction Agent（MVP 收缩决策专
   - tier: 分档（small/medium/large）
   - budget: 当前分档的预算上限
   - over_budget: 是否超预算
-  - dimensions: 各维度的点数明细（pages、api_endpoints、db_tables、auth_flows、integrations、file_upload、realtime、payment）
+  - dimensions: 各维度的点数明细（pages、api_endpoints、db_tables、auth_flows、
+    integrations、file_upload、realtime、payment）
 
 ## 收缩决策维度
 按以下优先级进行收缩决策：

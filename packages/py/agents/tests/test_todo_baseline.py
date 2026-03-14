@@ -14,7 +14,6 @@ from agents.capacity.tiers import CapacityTier, can_skip_contraction
 from agents.schemas.high_level import ScopeDraft, ScopeItem
 from ir_core.schema.node_types import Priority
 
-
 # ============================================================
 # Todo SaaS 基准数据
 # ============================================================

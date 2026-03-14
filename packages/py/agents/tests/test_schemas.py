@@ -10,10 +10,8 @@ from uuid import uuid4
 from agents.schemas.backend import BackendInput, BackendOutput
 from agents.schemas.base import AgentInput, AgentOutput, AgentRunMeta, MessageSlice
 from agents.schemas.contraction import (
-    ContractionDecision,
     ContractionInput,
     ContractionOutput,
-    DeferredFeature,
 )
 from agents.schemas.diagram import DiagramOutput
 from agents.schemas.doc import DocOutput

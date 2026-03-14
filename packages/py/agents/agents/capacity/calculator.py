@@ -7,11 +7,10 @@
 
 from pydantic import BaseModel
 
-from agents.capacity.rules import CapacityDimension, CapacityRule, DEFAULT_RULES
+from agents.capacity.rules import DEFAULT_RULES, CapacityDimension, CapacityRule
 from agents.capacity.tiers import (
-    CapacityTier,
     TIER_BUDGETS,
-    can_skip_contraction,
+    CapacityTier,
     get_tier,
     is_over_budget,
 )
