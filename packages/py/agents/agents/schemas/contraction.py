@@ -5,11 +5,30 @@ Contraction Agent 负责对 Intent Agent 产出的功能范围草案进行收缩
 删减非 MVP 功能，输出精简后的 ScopeDraft 和收缩决策详情。
 """
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
 from pydantic import BaseModel
 
-from agents.capacity.calculator import CapacityReport
 from agents.schemas.base import AgentInput, AgentOutput
 from agents.schemas.high_level import ScopeDraft
+
+if TYPE_CHECKING:
+    pass
+
+
+def _capacity_report_validator(v: Any) -> Any:
+    """
+    延迟导入 CapacityReport 进行校验，避免循环导入。
+    """
+    from agents.capacity.calculator import CapacityReport
+
+    if isinstance(v, CapacityReport):
+        return v
+    if isinstance(v, dict):
+        return CapacityReport.model_validate(v)
+    raise ValueError(f"无法解析为 CapacityReport: {type(v)}")
 
 
 class ContractionInput(AgentInput):
@@ -22,7 +41,18 @@ class ContractionInput(AgentInput):
     """
 
     scope_draft: ScopeDraft
-    capacity_report: CapacityReport
+    capacity_report: Any
+
+    def model_post_init(self, __context: Any) -> None:
+        """
+        在模型初始化后校验 capacity_report 类型。
+        """
+        super().model_post_init(__context)
+        object.__setattr__(
+            self,
+            "capacity_report",
+            _capacity_report_validator(self.capacity_report),
+        )
 
 
 class DeferredFeature(BaseModel):
