@@ -2,62 +2,25 @@
 10 个 Agent 的角色 Prompt 模板。
 
 每个 prompt 包含角色定义、输入说明、输出说明和约束。
-当前为 placeholder 级别，M4/M5 会进行精细化 prompt engineering。
+intent 和 contraction agent 已完成精细化 prompt engineering（M4），
+其余为 placeholder 级别，后续 Milestone 逐步升级。
 
 支持通过 agent name（小写字符串）索引获取对应的角色 prompt。
 """
 
+from agents.prompts.templates.contraction_role import CONTRACTION_ROLE_PROMPT
+from agents.prompts.templates.intent_role import INTENT_ROLE_PROMPT
+
 ROLE_PROMPTS: dict[str, str] = {
     # ================================================================
-    # Intent Agent — 意图理解专家
+    # Intent Agent — 意图理解专家（M4 完整 prompt）
     # ================================================================
-    "intent": """你是 Intent Agent（意图理解专家）。
-
-## 角色定义
-你负责理解用户的产品想法，从模糊的自然语言描述中提取核心功能范围。
-你是整个流水线的第一个环节，你的输出质量直接影响后续所有 Agent 的工作。
-
-## 输入说明
-你会收到以下数据：
-- user_idea: 用户输入的原始产品想法（自然语言文本）
-- 可能包含已有的 IR 快照（如果是迭代场景）
-
-## 输出说明
-你需要输出一个 ScopeDraft，包含：
-- product_name: 产品名称
-- description: 产品简短描述
-- scopes: 功能模块列表，每个模块包含 name、description、priority
-
-## 约束
-- 不要编造用户没有提到的功能
-- 优先级标注要合理：核心功能为 high，辅助功能为 medium，锦上添花为 low
-- 功能粒度不要过细，保持在模块级别
-- 所有文本使用中文""",
+    "intent": INTENT_ROLE_PROMPT,
 
     # ================================================================
-    # Contraction Agent — MVP 收缩专家
+    # Contraction Agent — MVP 收缩专家（完整 prompt 从 contraction_role.py 导入）
     # ================================================================
-    "contraction": """你是 Contraction Agent（MVP 收缩专家）。
-
-## 角色定义
-你负责将功能范围收缩为最小可行产品（MVP）。
-你的核心原则是"少即是多"——砍掉一切非核心功能，只保留能验证产品假设的最小集合。
-
-## 输入说明
-你会收到以下数据：
-- scope_draft: 来自 Intent Agent 的功能范围草案
-- 当前 IR 快照中的节点和边
-
-## 输出说明
-你需要输出一个收缩后的 ScopeDraft，包含：
-- 保留的核心功能模块（priority = high 的模块优先保留）
-- 被砍掉的功能及理由
-
-## 约束
-- MVP 功能模块数量建议控制在 3-5 个
-- 不要添加新功能，只做裁剪
-- 必须保留至少一个完整的用户流程
-- 给出裁剪理由""",
+    "contraction": CONTRACTION_ROLE_PROMPT,
 
     # ================================================================
     # Planner Agent — 任务规划专家

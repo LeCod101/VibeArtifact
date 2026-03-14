@@ -50,6 +50,24 @@ class IntentTranslator(BaseTranslator):
         operations: list[dict] = []
         warnings: list[str] = []
 
+        # 边界检查：product_name 为空
+        if not draft.product_name or not draft.product_name.strip():
+            warnings.append("product_name 为空，请提供产品名称")
+
+        # 边界检查：scopes 为空列表
+        if not draft.scopes:
+            return TranslatorResult(
+                operations=[],
+                warnings=["scopes 列表为空，至少需要一个功能模块才能继续"],
+            )
+
+        # 边界检查：scopes 超过 10 个（范围过大）
+        if len(draft.scopes) > 10:
+            warnings.append(
+                f"scopes 数量为 {len(draft.scopes)}，超过 10 个，"
+                "建议收缩功能范围以控制 MVP 复杂度"
+            )
+
         # 记录已创建节点的临时 ID（使用列表索引作为占位引用）
         scope_op_indices: list[int] = []
         risk_op_indices: list[int] = []

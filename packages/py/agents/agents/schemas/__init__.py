@@ -16,7 +16,12 @@ from agents.schemas.base import (
 )
 
 # Agent 专用 Schema — Contraction
-from agents.schemas.contraction import ContractionInput, ContractionOutput
+from agents.schemas.contraction import (
+    ContractionDecision,
+    ContractionInput,
+    ContractionOutput,
+    DeferredFeature,
+)
 
 # Agent 专用 Schema — Diagram
 from agents.schemas.diagram import DiagramInput, DiagramOutput
@@ -92,6 +97,8 @@ __all__ = [
     "IntentOutput",
     "ContractionInput",
     "ContractionOutput",
+    "ContractionDecision",
+    "DeferredFeature",
     "PlannerInput",
     "PlannerOutput",
     "SchemaInput",

@@ -9,7 +9,12 @@ from uuid import uuid4
 
 from agents.schemas.backend import BackendInput, BackendOutput
 from agents.schemas.base import AgentInput, AgentOutput, AgentRunMeta, MessageSlice
-from agents.schemas.contraction import ContractionInput, ContractionOutput
+from agents.schemas.contraction import (
+    ContractionDecision,
+    ContractionInput,
+    ContractionOutput,
+    DeferredFeature,
+)
 from agents.schemas.diagram import DiagramOutput
 from agents.schemas.doc import DocOutput
 from agents.schemas.export import ExportInput, ExportOutput
@@ -270,23 +275,57 @@ class TestAgentSpecificSchemas:
 
     def test_contraction_input_output_roundtrip(self):
         """ContractionInput/ContractionOutput 往返测试。"""
+        # 构造容量报告数据
+        capacity_report_data = {
+            "dimensions": [
+                {"dimension": "pages", "count": 1, "points": 3},
+                {"dimension": "api_endpoints", "count": 2, "points": 4},
+                {"dimension": "db_tables", "count": 1, "points": 3},
+                {"dimension": "auth_flows", "count": 0, "points": 0},
+                {"dimension": "integrations", "count": 0, "points": 0},
+                {"dimension": "file_upload", "count": 0, "points": 0},
+                {"dimension": "realtime", "count": 0, "points": 0},
+                {"dimension": "payment", "count": 0, "points": 0},
+            ],
+            "total_points": 10,
+            "tier": "small",
+            "budget": 30,
+            "over_budget": False,
+            "needs_contraction": False,
+            "must_contract": False,
+        }
         input_data = {
             **_base_input_data(),
             "scope_draft": _sample_scope_draft(),
+            "capacity_report": capacity_report_data,
         }
         inp = ContractionInput.model_validate(input_data)
         assert inp.scope_draft.product_name == "TestApp"
+        assert inp.capacity_report.total_points == 10
 
+        # 构造收缩决策数据
+        decision_data = {
+            "retained_features": ["核心功能"],
+            "deferred_features": [
+                {"name": "高级功能", "reason": "实现复杂度过高，优先延后"}
+            ],
+            "risks": ["收缩后功能较少"],
+            "rationale": "保留核心功能作为 MVP 最小集合",
+        }
         output_data = {
             "reasoning": "收缩功能",
             "confidence": 0.8,
             "warnings": [],
             "scope_draft": _sample_scope_draft(),
+            "decision": decision_data,
         }
         out = ContractionOutput.model_validate(output_data)
         dumped = out.model_dump()
         restored = ContractionOutput.model_validate(dumped)
         assert len(restored.scope_draft.scopes) == 1
+        assert restored.decision.rationale == "保留核心功能作为 MVP 最小集合"
+        assert len(restored.decision.deferred_features) == 1
+        assert restored.decision.deferred_features[0].name == "高级功能"
 
     def test_planner_input_output_roundtrip(self):
         """PlannerInput/PlannerOutput 往返测试。"""

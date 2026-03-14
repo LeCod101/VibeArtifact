@@ -20,6 +20,7 @@ from agents.schemas.high_level import (
 from agents.translators import get_translator
 from agents.translators.intent_translator import IntentTranslator
 from agents.translators.schema_translator import SchemaTranslator
+from ir_core.schema.node_types import Priority
 from ir_core.schema.operation_types import OperationType
 
 # ============================================================
@@ -36,7 +37,7 @@ def _make_scope_draft(
         ScopeItem(
             name=f"功能{i+1}",
             description=f"功能{i+1}的描述",
-            priority="high" if i == 0 else "medium",
+            priority=Priority.HIGH if i == 0 else Priority.MEDIUM,
             tags=[f"tag{i+1}"],
         )
         for i in range(num_scopes)
@@ -135,10 +136,12 @@ class TestIntentTranslator:
     def test_risk_node_props_contain_required_fields(self):
         """risk 节点的 props 包含 title, description, severity, status。"""
         translator = IntentTranslator()
-        draft = _make_scope_draft(num_scopes=0, num_risks=1)
+        # 需要至少 1 个 scope 才能通过边界检查
+        draft = _make_scope_draft(num_scopes=1, num_risks=1)
         result = translator.translate(draft)
 
-        risk_op = result.operations[0]
+        # 第一个是 scope 节点，第二个是 risk 节点
+        risk_op = result.operations[1]
         props = risk_op["props"]
         assert "title" in props
         assert "description" in props
@@ -181,6 +184,53 @@ class TestIntentTranslator:
                 assert "node_type" in op
                 assert "label" in op
                 assert "props" in op
+
+    def test_empty_scopes_returns_warning(self):
+        """scopes 为空列表时返回空操作 + 警告。"""
+        translator = IntentTranslator()
+        draft = _make_scope_draft(num_scopes=0, num_risks=1)
+        result = translator.translate(draft)
+
+        assert len(result.operations) == 0
+        assert len(result.warnings) == 1
+        assert "scopes 列表为空" in result.warnings[0]
+
+    def test_too_many_scopes_produces_warning(self):
+        """scopes 超过 10 个时产生警告但仍正常翻译。"""
+        translator = IntentTranslator()
+        draft = _make_scope_draft(num_scopes=11, num_risks=0)
+        result = translator.translate(draft)
+
+        # 应该仍然生成 11 个操作
+        assert len(result.operations) == 11
+        # 应该包含范围过大的警告
+        scope_warning = [w for w in result.warnings if "超过 10 个" in w]
+        assert len(scope_warning) == 1
+
+    def test_empty_product_name_produces_warning(self):
+        """product_name 为空字符串时产生警告。"""
+        translator = IntentTranslator()
+        draft = ScopeDraft(
+            product_name="",
+            product_description="测试应用",
+            scopes=[
+                ScopeItem(
+                    name="功能1",
+                    description="功能1的描述",
+                    priority=Priority.HIGH,
+                    tags=["crud"],
+                ),
+            ],
+            deferred_items=[],
+            risks=[],
+        )
+        result = translator.translate(draft)
+
+        # 操作应该正常生成
+        assert len(result.operations) == 1
+        # 应该包含 product_name 为空的警告
+        name_warning = [w for w in result.warnings if "product_name" in w]
+        assert len(name_warning) == 1
 
 
 # ============================================================
