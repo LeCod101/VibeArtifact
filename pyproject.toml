@@ -30,6 +30,10 @@ target-version = "py312"
 [tool.ruff.lint]
 select = ["E", "F", "I", "W"]
 
+[tool.ruff.lint.per-file-ignores]
+# few-shot 示例中 JSON 内嵌代码的行长度超限不可避免
+"packages/py/agents/agents/prompts/examples/*_examples.py" = ["E501"]
+
 [tool.pytest.ini_options]
 testpaths = [
     "services/api/tests",

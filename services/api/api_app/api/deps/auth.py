@@ -2,7 +2,7 @@
 
 import uuid
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Query, Request, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError
 from platform_data.models.user import User, UserStatus
@@ -78,3 +78,97 @@ async def get_current_user(
         raise credentials_exception
 
     return user
+
+
+async def _resolve_token_to_user(
+    token: str,
+    db: AsyncSession,
+) -> User:
+    """根据 JWT token 字符串解析出用户对象。
+
+    内部复用函数，供 get_current_user 和 get_current_user_sse 共享逻辑。
+
+    参数：
+        token: JWT token 字符串
+        db: 异步数据库会话
+
+    返回：
+        User ORM 对象
+
+    异常：
+        HTTPException 401: token 无效或用户不存在
+    """
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="无法验证凭据",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+    try:
+        payload = decode_token(token)
+
+        if payload.get("type") != "access":
+            raise credentials_exception
+
+        user_id_str: str | None = payload.get("sub")
+        if user_id_str is None:
+            raise credentials_exception
+
+        user_id = uuid.UUID(user_id_str)
+    except (JWTError, ValueError):
+        raise credentials_exception
+
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+
+    if user is None:
+        raise credentials_exception
+
+    if user.status != UserStatus.active:
+        raise credentials_exception
+
+    return user
+
+
+async def get_current_user_sse(
+    request: Request,
+    token: str | None = Query(None),
+    db: AsyncSession = Depends(get_db),
+) -> User:
+    """SSE 端点专用认证依赖。
+
+    浏览器原生 EventSource 不支持自定义 Header，
+    因此 SSE 端点需要同时支持两种认证方式：
+    1. 优先从 Authorization Header 读取 Bearer token
+    2. 回退到 URL 查询参数 ?token=xxx
+
+    参数：
+        request: FastAPI 请求对象
+        token: URL 查询参数中的 token（可选）
+        db: 异步数据库会话
+
+    返回：
+        User ORM 对象（当前已认证用户）
+
+    异常：
+        HTTPException 401: 无法获取有效 token 或认证失败
+    """
+    resolved_token: str | None = None
+
+    # 优先从 Authorization Header 提取 token
+    auth_header = request.headers.get("Authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        resolved_token = auth_header[len("Bearer "):]
+
+    # Header 中无 token 时回退到查询参数
+    if not resolved_token and token:
+        resolved_token = token
+
+    if not resolved_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="未提供认证凭据",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    return await _resolve_token_to_user(resolved_token, db)
