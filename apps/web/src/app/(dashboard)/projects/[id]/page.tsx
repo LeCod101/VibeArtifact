@@ -8,7 +8,8 @@
 
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import Link from "next/link";
+import { ArrowLeft, Lightbulb, Loader2, MessageSquare } from "lucide-react";
 import { useLocale } from "@/i18n/context";
 import t from "@/i18n/translations";
 import type { Locale } from "@/i18n/translations";
@@ -63,12 +64,28 @@ export default function ProjectDetailPage() {
         >
           <ArrowLeft size={18} />
         </Button>
-        <div>
+        <div className="flex-1">
           <h1 className="text-lg font-bold">{project?.name}</h1>
           {project?.description && (
             <p className="text-xs text-muted-foreground">{project.description}</p>
           )}
         </div>
+        {/* 项目内导航 tab */}
+        <nav className="flex items-center gap-1">
+          <span
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium bg-secondary text-foreground"
+          >
+            <MessageSquare size={16} />
+            {L(t.project.conversations, locale)}
+          </span>
+          <Link
+            href={`/projects/${projectId}/ideation`}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+          >
+            <Lightbulb size={16} />
+            {L(t.generation.ideationTitle, locale)}
+          </Link>
+        </nav>
       </div>
 
       {/* 主内容区 */}

@@ -15,7 +15,8 @@
 
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Loader2, Sparkles, CheckCircle2 } from "lucide-react";
+import Link from "next/link";
+import { ArrowLeft, Loader2, Sparkles, CheckCircle2, MessageSquare, Lightbulb } from "lucide-react";
 import { toast } from "sonner";
 import { useLocale } from "@/i18n/context";
 import t from "@/i18n/translations";
@@ -178,22 +179,34 @@ export default function IdeationPage() {
 
   return (
     <div className="flex flex-col items-center pb-12">
-      {/* 面包屑 */}
-      <div className="w-full max-w-4xl flex items-center gap-2 mb-6">
+      {/* 项目标题栏 */}
+      <div className="w-full max-w-4xl flex items-center gap-3 mb-6">
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => router.push(`/projects/${projectId}`)}
+          onClick={() => router.push("/dashboard")}
         >
           <ArrowLeft size={18} />
         </Button>
-        <span className="text-sm text-muted-foreground">
-          {project?.name}
-        </span>
-        <span className="text-sm text-muted-foreground">/</span>
-        <span className="text-sm font-medium">
-          {L(t.generation.ideationTitle, locale)}
-        </span>
+        <div className="flex-1">
+          <h2 className="text-lg font-bold">{project?.name}</h2>
+        </div>
+        {/* 项目内导航 tab */}
+        <nav className="flex items-center gap-1">
+          <Link
+            href={`/projects/${projectId}`}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+          >
+            <MessageSquare size={16} />
+            {L(t.project.conversations, locale)}
+          </Link>
+          <span
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium bg-secondary text-foreground"
+          >
+            <Lightbulb size={16} />
+            {L(t.generation.ideationTitle, locale)}
+          </span>
+        </nav>
       </div>
 
       {/* 步骤指示器 */}
