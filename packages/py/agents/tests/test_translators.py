@@ -74,12 +74,12 @@ def _make_schema_plan():
         ],
         endpoints=[
             EndpointSpec(
-                method="get",
+                method="GET",
                 path="/api/users",
                 description="获取用户列表",
             ),
             EndpointSpec(
-                method="post",
+                method="POST",
                 path="/api/tasks",
                 description="创建任务",
                 auth_required=True,

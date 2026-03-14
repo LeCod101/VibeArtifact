@@ -64,6 +64,8 @@ class CostTracker:
         """
         记录一次 LLM 调用的成本。
 
+        当前为内存实现，预留 async 接口供未来数据库持久化使用（M5 接入 cost_ledger 表）。
+
         - agent_id: 调用方 Agent 的唯一标识
         - project_id: 所属项目 ID
         - model: 使用的模型标识

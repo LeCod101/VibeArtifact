@@ -15,6 +15,8 @@ Agent 的输出格式，描述其业务语义。
 - ExportManifest：导出清单（export agent）
 """
 
+from typing import Literal
+
 from ir_core.schema.node_types import Priority
 from pydantic import BaseModel
 
@@ -90,7 +92,7 @@ class TaskPlan(BaseModel):
     """
 
     steps: list[TaskStep]
-    estimated_complexity: str
+    estimated_complexity: Literal["small", "medium", "large"]
 
 
 # ============================================================
@@ -146,7 +148,7 @@ class EndpointSpec(BaseModel):
     - auth_required: 是否需要认证
     """
 
-    method: str
+    method: Literal["GET", "POST", "PUT", "DELETE", "PATCH"]
     path: str
     description: str
     request_schema: str | None = None
@@ -234,7 +236,7 @@ class DiagramSpec(BaseModel):
     """
 
     title: str
-    diagram_type: str
+    diagram_type: Literal["flowchart", "sequence", "er", "classDiagram"]
     mermaid_code: str
 
 

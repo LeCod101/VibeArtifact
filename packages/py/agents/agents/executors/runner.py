@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import json
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 from runtime_tools.cost.tracker import CostTracker
 from runtime_tools.llm.config import LLMConfig, get_model_for_tier
 from runtime_tools.llm.provider import BaseLLMProvider
@@ -27,6 +27,28 @@ from agents.context.assembler import ContextAssembler
 from agents.context.budget import ContextBudget
 from agents.prompts.builder import PromptBuilder
 from agents.schemas.base import AgentInput, AgentRunMeta
+
+
+class AgentOutputParseError(Exception):
+    """
+    Agent 输出解析错误。
+
+    当 LLM 返回的内容无法解析为合法 JSON，
+    或 JSON 不符合 Agent 的 output_schema 时抛出。
+    - agent_id: 出错的 Agent 标识
+    - raw_content: LLM 返回的原始内容
+    - cause: 原始异常
+    """
+
+    def __init__(
+        self, agent_id: str, raw_content: str, cause: Exception
+    ) -> None:
+        self.agent_id = agent_id
+        self.raw_content = raw_content
+        self.cause = cause
+        super().__init__(
+            f"Agent '{agent_id}' 输出解析失败: {cause}"
+        )
 
 
 class AgentRunResult(BaseModel):
@@ -121,11 +143,16 @@ class AgentRunner:
         builder.set_output_contract(self._build_output_contract(config))
         builder.set_context_slice(context_slice.to_prompt_text())
 
-        messages = builder.build_messages(agent_input.task_description)
+        # 步骤 3.1：构建 messages
+        # task_description 已在 set_task 中注入 system prompt，
+        # user message 只需发送简短触发指令，避免内容重复
+        messages = builder.build_messages(
+            "请根据上述上下文和任务要求生成输出。"
+        )
 
         # 步骤 4：确定模型
         model = get_model_for_tier(
-            self._llm_config, config.model_tier.value
+            self._llm_config, config.model_tier
         )
 
         # 步骤 5：调用 LLM
@@ -140,8 +167,15 @@ class AgentRunner:
         llm_response = await self._llm.complete(llm_request)
 
         # 步骤 6：解析输出
-        raw_output = json.loads(llm_response.content)
-        output = config.output_schema.model_validate(raw_output)
+        try:
+            raw_output = json.loads(llm_response.content)
+            output = config.output_schema.model_validate(raw_output)
+        except (json.JSONDecodeError, ValidationError) as exc:
+            raise AgentOutputParseError(
+                agent_id=agent_id,
+                raw_content=llm_response.content,
+                cause=exc,
+            ) from exc
 
         # 步骤 7：填充运行元信息
         meta = AgentRunMeta(

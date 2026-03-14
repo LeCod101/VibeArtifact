@@ -31,6 +31,8 @@ class AgentRunRecorder:
         """
         记录一次 Agent 运行。
 
+        当前为内存实现，预留 async 接口供未来数据库持久化使用（M5 接入 agent_runs 表）。
+
         从 AgentRunResult 中提取关键信息，存入内存列表。
         - result: Agent 运行结果
         - project_id: 所属项目 ID

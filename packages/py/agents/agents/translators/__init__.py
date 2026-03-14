@@ -23,6 +23,8 @@ from .qa_translator import QATranslator
 from .schema_translator import SchemaTranslator
 
 # agent_id → Translator 实例的映射
+# 所有 Translator 均为轻量无状态对象，模块级实例化是有意为之：
+# 避免每次调用 get_translator() 时重复创建实例，且无共享可变状态风险
 TRANSLATOR_MAP: dict[str, BaseTranslator] = {
     "intent": IntentTranslator(),
     "contraction": ContractionTranslator(),

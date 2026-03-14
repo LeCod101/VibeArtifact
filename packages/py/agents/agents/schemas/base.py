@@ -9,11 +9,11 @@ Agent 基础类型模块。
 """
 
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 from uuid import UUID
 
 from ir_core.schema.data import IREdgeData, IRNodeData
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class MessageSlice(BaseModel):
@@ -26,7 +26,7 @@ class MessageSlice(BaseModel):
     - timestamp: 消息产生的时间戳（可选）
     """
 
-    role: str
+    role: Literal["user", "assistant", "system"]
     content: str
     timestamp: datetime | None = None
 
@@ -90,6 +90,6 @@ class AgentOutput(BaseModel):
     """
 
     reasoning: str
-    confidence: float
+    confidence: float = Field(default=0.0, ge=0.0, le=1.0)
     warnings: list[str] = []
     meta: AgentRunMeta | None = None

@@ -3,13 +3,14 @@ Agent 配置基础类型模块。
 
 定义 Agent 配置相关的核心数据结构：
 - RoleCategory: Agent 角色类别枚举
-- ModelTier: 模型档位枚举
+- ModelTier: 从 runtime_tools.llm.config 统一导入的模型档位枚举
 - AgentConfig: Agent 静态配置数据类
 """
 
 from enum import StrEnum
 
 from pydantic import BaseModel
+from runtime_tools.llm.config import ModelTier
 
 
 class RoleCategory(StrEnum):
@@ -26,19 +27,6 @@ class RoleCategory(StrEnum):
     DOCUMENTATION = "documentation"
     QA = "qa"
     DELIVERY = "delivery"
-
-
-class ModelTier(StrEnum):
-    """
-    模型档位。
-
-    区分 Agent 所需的模型能力层级：
-    - REASONING: 需要强推理能力的任务（如意图理解、规划）
-    - GENERATION: 需要大量生成能力的任务（如代码生成、文档生成）
-    """
-
-    REASONING = "reasoning"
-    GENERATION = "generation"
 
 
 class AgentConfig(BaseModel):
@@ -60,7 +48,11 @@ class AgentConfig(BaseModel):
     """
 
     # 允许 type[BaseModel] 类型作为字段值
-    model_config = {"arbitrary_types_allowed": True}
+    # 禁用 model_ 前缀保护，因为 model_tier 等字段需要使用该前缀
+    model_config = {
+        "arbitrary_types_allowed": True,
+        "protected_namespaces": (),
+    }
 
     agent_id: str
     name: str
