@@ -4,8 +4,9 @@ version = "0.1.0"
 description = "Runtime utilities: LLM adapters, locks, exporters, gates, cost"
 requires-python = ">=3.12"
 dependencies = [
-    "redis>=5.0",
     "pydantic>=2.0",
+    "redis>=5.0",
+    "litellm>=1.0.0",
 ]
 
 [tool.hatch.build.targets.wheel]

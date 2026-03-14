@@ -6,10 +6,21 @@ requires-python = ">=3.12"
 dependencies = [
     "pydantic>=2.0",
     "ir-core",
+    "runtime-tools",
 ]
 
 [tool.uv.sources]
 ir-core = { workspace = true }
+runtime-tools = { workspace = true }
+
+[project.optional-dependencies]
+test = [
+    "pytest>=7.0",
+    "pytest-asyncio>=0.23",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
 
 [tool.hatch.build.targets.wheel]
 packages = ["agents"]
