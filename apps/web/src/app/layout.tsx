@@ -4,7 +4,7 @@
  * 通过 CSS 变量 --font-heading 和 --font-body 提供给全局样式使用
  */
 import type { Metadata } from "next";
-import { Space_Grotesk, Inter, Geist_Mono, JetBrains_Mono } from "next/font/google";
+import { Space_Grotesk, Inter, Geist_Mono, JetBrains_Mono, Lora } from "next/font/google";
 import { I18nProvider } from "@/i18n/context";
 import { QueryProvider } from "@/lib/query-client";
 import { Toaster } from "@/components/ui/sonner";
@@ -29,6 +29,13 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+// 衬线展示字体 - Lora（用于问候语等大号标题）
+const lora = Lora({
+  subsets: ["latin"],
+  variable: "--font-serif",
+  display: "swap",
+});
+
 // 等宽终端风字体 - JetBrains Mono（用于统计数字展示）
 const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
@@ -50,7 +57,7 @@ export default function RootLayout({
   return (
     <html lang="zh" suppressHydrationWarning>
       <body
-        className={`${spaceGrotesk.variable} ${inter.variable} ${geistMono.variable} ${jetbrainsMono.variable} antialiased`}
+        className={`${spaceGrotesk.variable} ${inter.variable} ${geistMono.variable} ${jetbrainsMono.variable} ${lora.variable} antialiased`}
       >
         <I18nProvider>
           <QueryProvider>

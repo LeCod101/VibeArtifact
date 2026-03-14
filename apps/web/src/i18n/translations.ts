@@ -279,6 +279,15 @@ const translations = {
     sidebarDashboard: { zh: "仪表盘", en: "Dashboard" },
   },
 
+  /* ============ 问候语 ============ */
+  greeting: {
+    morning: { zh: "早上好", en: "Good morning" },
+    afternoon: { zh: "下午好", en: "Good afternoon" },
+    evening: { zh: "晚上好", en: "Good evening" },
+    inputPlaceholder: { zh: "描述你的想法...", en: "Describe your idea..." },
+    recentProjects: { zh: "最近项目", en: "Recent Projects" },
+  },
+
   /* ============ 项目相关 ============ */
   project: {
     createTitle: { zh: "新建项目", en: "Create Project" },

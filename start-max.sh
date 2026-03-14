@@ -7,8 +7,8 @@ cd "$(dirname "$0")/.dev-agents/max"
 
 # 模型选择
 if [ "$1" = "opus" ]; then
-  MODEL="claude-opus-4-5-20251101"
-  MODEL_NAME="Opus 4.5"
+  MODEL="claude-opus-4-6"
+  MODEL_NAME="Opus 4.6"
 else
   MODEL="claude-sonnet-4-20250514"
   MODEL_NAME="Sonnet 4"

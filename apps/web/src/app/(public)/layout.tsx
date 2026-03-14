@@ -30,7 +30,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
       <div className="fixed top-10 right-10 z-30">
         <button
           onClick={toggleLocale}
-          className="flex items-center gap-2 h-9 px-4 rounded-full border border-white/10 bg-white/[0.03] text-sm font-bold text-slate-400 hover:text-white hover:border-white/40 transition-all backdrop-blur-md"
+          className="flex items-center gap-2 h-9 px-4 rounded-full border border-border bg-card text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
         >
           <Languages size={14} />
           {locale === "zh" ? "EN" : "中文"}
