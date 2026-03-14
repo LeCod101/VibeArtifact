@@ -167,6 +167,14 @@ function AnimatedStat({
   const displayText =
     "displayText" in meta ? (meta as { displayText: string }).displayText : "";
 
+  // Hook 必须无条件调用，避免违反 Rules of Hooks
+  const { value, done } = useCountUp(
+    numericValue ?? 0,
+    1800,
+    decimals,
+    isVisible && numericValue !== null
+  );
+
   // 无数值项（如无穷），直接淡入显示
   if (numericValue === null) {
     return (
@@ -181,9 +189,6 @@ function AnimatedStat({
       </span>
     );
   }
-
-  // 有数值项，走计数器动画
-  const { value, done } = useCountUp(numericValue, 1800, decimals, isVisible);
 
   return (
     <span
