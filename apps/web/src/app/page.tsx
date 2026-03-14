@@ -460,7 +460,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <footer className="border-t border-border/80 bg-card/30">
+      <footer className="border-t border-border/80 bg-background">
         <div className="mx-auto max-w-[1180px] px-6 py-16 md:py-20">
           <div className="grid gap-14 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.6fr)_minmax(0,0.6fr)]">
             <div className="space-y-6">
