@@ -60,6 +60,9 @@ EDGE_CONSTRAINTS: dict[EdgeType, list[tuple[NodeType, NodeType]] | None] = {
     EdgeType.DEPENDS_ON: [
         (NodeType.ENTITY, NodeType.ENTITY),
         (NodeType.COMPONENT, NodeType.COMPONENT),
+        (NodeType.TASK, NodeType.TASK),
+        # 代码文件之间的依赖（如 models → schemas → routes）
+        (NodeType.CODE, NodeType.CODE),
     ],
     # references 允许任意节点类型之间的引用，用 None 标记
     EdgeType.REFERENCES: None,

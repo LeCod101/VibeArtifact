@@ -246,10 +246,21 @@ class TestSchemaTranslator:
         plan = _make_schema_plan()
         result = translator.translate(plan)
 
-        # 2 个 entity + 2 个 endpoint = 4 个操作
-        assert len(result.operations) == 4
-        for op in result.operations:
-            assert op["operation_type"] == OperationType.CREATE_NODE
+        # 筛选出 create_node 操作
+        create_node_ops = [
+            op for op in result.operations
+            if op["operation_type"] == OperationType.CREATE_NODE
+        ]
+        # 2 个 entity + 2 个 endpoint = 4 个 create_node 操作
+        assert len(create_node_ops) == 4
+
+        # 升级后的翻译器还会生成关联边（endpoint → entity）
+        create_edge_ops = [
+            op for op in result.operations
+            if op["operation_type"] == OperationType.CREATE_EDGE
+        ]
+        # GET /api/users → User (queries) + POST /api/tasks → Task (mutates)
+        assert len(create_edge_ops) == 2
 
     def test_endpoint_method_is_uppercase(self):
         """endpoint 节点的 method 是大写。"""
@@ -257,10 +268,11 @@ class TestSchemaTranslator:
         plan = _make_schema_plan()
         result = translator.translate(plan)
 
-        # 查找 endpoint 操作
+        # 查找 endpoint 操作（只看 create_node 且 node_type 为 endpoint）
         endpoint_ops = [
             op for op in result.operations
-            if op["node_type"] == "endpoint"
+            if op.get("operation_type") == OperationType.CREATE_NODE
+            and op.get("node_type") == "endpoint"
         ]
         assert len(endpoint_ops) == 2
         for op in endpoint_ops:

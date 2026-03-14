@@ -16,12 +16,15 @@ from ir_core.schema.edge_types import (
 )
 from ir_core.schema.node_types import (
     NODE_PROPS_MAP,
+    CodeProps,
     ComponentProps,
     DecisionProps,
     DecisionStatus,
+    DeliveryProps,
     EndpointProps,
     EntityProps,
     FieldDef,
+    FileEntryDef,
     HttpMethod,
     NodeType,
     PageProps,
@@ -31,6 +34,7 @@ from ir_core.schema.node_types import (
     RiskSeverity,
     RiskStatus,
     ScopeProps,
+    TaskProps,
 )
 from ir_core.schema.operation_types import (
     OPERATION_PAYLOAD_MAP,
@@ -52,6 +56,7 @@ __all__ = [
     "NodeType",
     "NODE_PROPS_MAP",
     "FieldDef",
+    "FileEntryDef",
     "PropDef",
     "Priority",
     "HttpMethod",
@@ -65,6 +70,9 @@ __all__ = [
     "ComponentProps",
     "DecisionProps",
     "RiskProps",
+    "TaskProps",
+    "CodeProps",
+    "DeliveryProps",
     # 边类型
     "EdgeType",
     "EDGE_CONSTRAINTS",

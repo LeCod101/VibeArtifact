@@ -11,8 +11,9 @@ Agent 的输出格式，描述其业务语义。
 - FieldSpec / EntitySpec / EndpointSpec / SchemaPlan：数据模型与 API 契约（schema agent）
 - FileSpec / BackendPlan / FrontendPlan / DocPlan：代码文件计划（backend/frontend/doc agent）
 - DiagramSpec / DiagramPlan：图表计划（diagram agent）
-- FixItem / FixPlan：修复计划（qa agent）
-- ExportManifest：导出清单（export agent）
+- IssueSpec / QAReport：质量检查报告（qa agent）
+- FileEntry / ExportManifest：导出清单（export agent）
+- FixItem / FixPlan：旧版修复计划（已废弃，保留兼容）
 """
 
 from typing import Literal
@@ -252,14 +253,49 @@ class DiagramPlan(BaseModel):
 
 
 # ============================================================
-# QA 修复相关（qa agent）
+# QA 检查相关（qa agent）
 # ============================================================
 
+class IssueSpec(BaseModel):
+    """
+    QA 检查发现的单个问题。
+
+    描述一个结构性问题的严重度、分类、描述和影响文件。
+    - severity: 严重度等级（critical / warning / info）
+    - category: 问题分类（missing_file / schema_mismatch / import_error / config_error）
+    - description: 问题描述
+    - affected_file: 受影响的文件路径
+    """
+
+    severity: Literal["critical", "warning", "info"]
+    category: Literal[
+        "missing_file", "schema_mismatch", "import_error", "config_error"
+    ]
+    description: str
+    affected_file: str
+
+
+class QAReport(BaseModel):
+    """
+    qa agent 的高层输出 — 质量检查报告。
+
+    描述结构性检查的结果，包含通过/失败状态、问题列表和摘要。
+    - passed: 是否通过质量检查
+    - issues: 发现的问题列表
+    - summary: 检查结果摘要
+    """
+
+    passed: bool
+    issues: list[IssueSpec] = []
+    summary: str
+
+
+# 保留旧类型别名以兼容现有引用
 class FixItem(BaseModel):
     """
-    QA 修复项。
+    QA 修复项（已废弃，保留兼容）。
 
-    描述一个需要修复的问题。
+    M5 之前使用的旧格式，已被 IssueSpec 替代。
     - file_path: 问题所在的文件路径
     - issue: 问题描述
     - fix_description: 修复方案描述
@@ -274,9 +310,9 @@ class FixItem(BaseModel):
 
 class FixPlan(BaseModel):
     """
-    qa agent 的高层输出 — QA 修复计划。
+    qa agent 的旧高层输出（已废弃，保留兼容）。
 
-    描述质量检查的结果和需要修复的问题。
+    M5 之前使用的旧格式，已被 QAReport 替代。
     - passed: 是否通过质量检查
     - issues: 需要修复的问题列表
     - summary: 检查结果摘要
@@ -291,18 +327,34 @@ class FixPlan(BaseModel):
 # 导出相关（export agent）
 # ============================================================
 
+class FileEntry(BaseModel):
+    """
+    导出文件条目。
+
+    描述一个待打包导出的文件，包含来源类型、源路径和导出路径。
+    - source_type: 文件来源类型（code / doc / diagram）
+    - source_path: 源文件在 IR 中的路径
+    - export_path: 导出到最终项目中的目标路径
+    """
+
+    source_type: Literal["code", "doc", "diagram"]
+    source_path: str
+    export_path: str
+
+
 class ExportManifest(BaseModel):
     """
     export agent 的高层输出 — 导出清单。
 
-    描述最终导出的产物。
+    描述最终交付项目的完整结构，包含项目名称、文件列表、
+    Docker Compose 配置和环境变量模板。
     - project_name: 项目名称
-    - files: 导出的文件路径列表
-    - entry_point: 项目入口文件路径
-    - readme_path: README 文件路径
+    - files: 导出文件条目列表
+    - docker_compose_config: Docker Compose 服务配置字典
+    - env_template: .env.example 模板键值对字典
     """
 
     project_name: str
-    files: list[str]
-    entry_point: str | None = None
-    readme_path: str = "README.md"
+    files: list[FileEntry]
+    docker_compose_config: dict
+    env_template: dict

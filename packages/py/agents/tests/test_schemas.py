@@ -234,15 +234,31 @@ class TestHighLevelSchemas:
     def test_export_manifest_roundtrip(self):
         """ExportManifest 可以 model_validate / model_dump 往返。"""
         data = {
-            "project_name": "TestProject",
-            "files": ["main.py", "README.md"],
-            "entry_point": "main.py",
+            "project_name": "test-project",
+            "files": [
+                {
+                    "source_type": "code",
+                    "source_path": "backend/main.py",
+                    "export_path": "backend/main.py",
+                }
+            ],
+            "docker_compose_config": {
+                "services": {
+                    "backend": {},
+                    "frontend": {},
+                    "postgres": {},
+                    "redis": {},
+                }
+            },
+            "env_template": {
+                "DATABASE_URL": "postgresql://user:pass@localhost/db",
+            },
         }
         obj = ExportManifest.model_validate(data)
         dumped = obj.model_dump()
         restored = ExportManifest.model_validate(dumped)
-        assert restored.project_name == "TestProject"
-        assert len(restored.files) == 2
+        assert restored.project_name == "test-project"
+        assert len(restored.files) == 1
 
 
 # ============================================================
@@ -447,16 +463,19 @@ class TestAgentSpecificSchemas:
         """QAInput/QAOutput 往返测试。"""
         input_data = {
             **_base_input_data(),
-            "file_contents": {"main.py": "print('hello')"},
+            "file_list": ["backend/app/main.py", "README.md"],
+            "endpoint_list": [{"method": "GET", "path": "/api/users"}],
+            "entity_list": [{"name": "User", "fields": []}],
+            "page_list": ["/dashboard"],
         }
         inp = QAInput.model_validate(input_data)
-        assert "main.py" in inp.file_contents
+        assert len(inp.file_list) == 2
 
         output_data = {
             "reasoning": "审查代码",
             "confidence": 0.9,
             "warnings": [],
-            "fix_plan": {
+            "qa_report": {
                 "passed": True,
                 "issues": [],
                 "summary": "通过检查",
@@ -465,13 +484,16 @@ class TestAgentSpecificSchemas:
         out = QAOutput.model_validate(output_data)
         dumped = out.model_dump()
         restored = QAOutput.model_validate(dumped)
-        assert restored.fix_plan.passed
+        assert restored.qa_report.passed
 
     def test_export_input_output_roundtrip(self):
         """ExportInput/ExportOutput 往返测试。"""
         input_data = {
             **_base_input_data(),
-            "artifact_paths": ["main.py", "README.md"],
+            "artifact_paths": [
+                {"source_type": "code", "path": "main.py"},
+                {"source_type": "doc", "path": "README.md"},
+            ],
         }
         inp = ExportInput.model_validate(input_data)
         assert len(inp.artifact_paths) == 2
@@ -481,12 +503,31 @@ class TestAgentSpecificSchemas:
             "confidence": 0.95,
             "warnings": [],
             "export_manifest": {
-                "project_name": "MyProject",
-                "files": ["main.py"],
-                "entry_point": "main.py",
+                "project_name": "my-project",
+                "files": [
+                    {
+                        "source_type": "code",
+                        "source_path": "backend/app/main.py",
+                        "export_path": "backend/app/main.py",
+                    }
+                ],
+                "docker_compose_config": {
+                    "services": {
+                        "backend": {},
+                        "frontend": {},
+                        "postgres": {},
+                        "redis": {},
+                    }
+                },
+                "env_template": {
+                    "DATABASE_URL": "postgresql://user:pass@localhost/db",
+                    "REDIS_URL": "redis://localhost:6379/0",
+                    "SECRET_KEY": "change-me",
+                },
             },
         }
         out = ExportOutput.model_validate(output_data)
         dumped = out.model_dump()
         restored = ExportOutput.model_validate(dumped)
-        assert restored.export_manifest.project_name == "MyProject"
+        assert restored.export_manifest.project_name == "my-project"
+        assert len(restored.export_manifest.files) == 1
