@@ -126,10 +126,10 @@ export function useSSE(
     };
   }, [runId, projectId]);
 
-  // 保持 connectRef 与最新的 connect 同步
-  connectRef.current = connect;
-
   useEffect(() => {
+    // 保持 connectRef 与最新的 connect 同步
+    connectRef.current = connect;
+
     // 重置状态
     setEvents([]);
     setIsConnected(false);
