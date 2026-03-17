@@ -9,7 +9,7 @@ import { AlertTriangle, Clock, Tag } from "lucide-react";
 import { useLocale } from "@/i18n/context";
 import t from "@/i18n/translations";
 import type { Locale } from "@/i18n/translations";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import type { ScopeDraftData } from "@/features/generation/api";
 

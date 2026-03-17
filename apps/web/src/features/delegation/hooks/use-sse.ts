@@ -53,6 +53,8 @@ export function useSSE(
   // 标记是否因终结事件而主动关闭，无需重连
   const terminatedRef = useRef(false);
 
+  const connectRef = useRef<(() => void) | null>(null);
+
   /**
    * 创建并连接 EventSource
    *
@@ -116,13 +118,16 @@ export function useSSE(
           BASE_DELAY_MS * Math.pow(2, retryCountRef.current);
         retryCountRef.current += 1;
         setTimeout(() => {
-          connect();
+          connectRef.current?.();
         }, delay);
       } else {
         setError("SSE 连接失败，已达最大重试次数");
       }
     };
   }, [runId, projectId]);
+
+  // 保持 connectRef 与最新的 connect 同步
+  connectRef.current = connect;
 
   useEffect(() => {
     // 重置状态
