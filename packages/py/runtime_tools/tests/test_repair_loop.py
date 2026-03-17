@@ -87,10 +87,9 @@ class TestRepairLoop:
         with patch.object(
             loop._gate_runner, "run_all", return_value=make_passed_suite()
         ), patch.object(
-            loop, "_load_snapshot_nodes", new_callable=AsyncMock, return_value=make_nodes()
+            loop, "load_snapshot_nodes", new_callable=AsyncMock, return_value=make_nodes()
         ):
             result = await loop.run_gates_and_repair(
-                nodes=make_nodes(),
                 snapshot_id=str(uuid4()),
                 scope_draft_json="{}",
             )
@@ -119,15 +118,14 @@ class TestRepairLoop:
         with patch.object(
             loop._gate_runner, "run_all", side_effect=gate_side_effect
         ), patch.object(
-            loop, "_load_snapshot_nodes", new_callable=AsyncMock, return_value=make_nodes()
+            loop, "load_snapshot_nodes", new_callable=AsyncMock, return_value=make_nodes()
         ), patch(
             "runtime_tools.gates.repair_loop.RepairLoop._retry_agents",
             new_callable=AsyncMock,
             return_value=make_nodes(),
         ):
             result = await loop.run_gates_and_repair(
-                nodes=make_nodes(),
-                snapshot_id=str(uuid4()),
+                                snapshot_id=str(uuid4()),
                 scope_draft_json="{}",
             )
 
@@ -146,7 +144,7 @@ class TestRepairLoop:
         with patch.object(
             loop._gate_runner, "run_all", return_value=make_failed_suite("backend")
         ), patch.object(
-            loop, "_load_snapshot_nodes", new_callable=AsyncMock, return_value=make_nodes()
+            loop, "load_snapshot_nodes", new_callable=AsyncMock, return_value=make_nodes()
         ), patch(
             "runtime_tools.gates.repair_loop.RepairLoop._retry_agents",
             new_callable=AsyncMock,
@@ -156,8 +154,7 @@ class TestRepairLoop:
             new_callable=AsyncMock,
         ) as mock_mark:
             result = await loop.run_gates_and_repair(
-                nodes=make_nodes(),
-                snapshot_id=str(uuid4()),
+                                snapshot_id=str(uuid4()),
                 scope_draft_json="{}",
             )
 
@@ -183,14 +180,13 @@ class TestRepairLoop:
         with patch.object(
             loop._gate_runner, "run_all", return_value=unknown_suite
         ), patch.object(
-            loop, "_load_snapshot_nodes", new_callable=AsyncMock, return_value=make_nodes()
+            loop, "load_snapshot_nodes", new_callable=AsyncMock, return_value=make_nodes()
         ), patch(
             "runtime_tools.gates.repair_loop.RepairLoop._mark_needs_attention",
             new_callable=AsyncMock,
         ) as mock_mark:
             result = await loop.run_gates_and_repair(
-                nodes=make_nodes(),
-                snapshot_id=str(uuid4()),
+                                snapshot_id=str(uuid4()),
                 scope_draft_json="{}",
             )
 

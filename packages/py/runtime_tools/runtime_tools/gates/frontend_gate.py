@@ -128,7 +128,7 @@ class FrontendGate:
                 content = ts_file.read_text(encoding="utf-8")
                 # 检查括号平衡
                 open_count = content.count("{") - content.count("}")
-                if abs(open_count) > 3:
+                if abs(open_count) > 1:
                     issues.append(f"{ts_file.name}: 大括号不平衡（差值 {open_count}）")
             except Exception as e:
                 issues.append(f"{ts_file.name}: 读取失败 - {e}")

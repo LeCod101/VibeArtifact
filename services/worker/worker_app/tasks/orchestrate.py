@@ -183,10 +183,9 @@ async def _run_delegated_dag_async(
 
         repair_loop = RepairLoop(manager=manager, run_id=run_uuid)
         repair_result = await repair_loop.run_gates_and_repair(
-            nodes=await repair_loop._load_snapshot_nodes(snapshot_id),
             snapshot_id=snapshot_id,
             scope_draft_json=scope_draft_json,
-            project_name=project_id,
+            project_name=str(run_uuid),
         )
 
         if repair_result.needs_attention:

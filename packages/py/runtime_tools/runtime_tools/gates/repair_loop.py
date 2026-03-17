@@ -52,7 +52,6 @@ class RepairLoop:
 
     async def run_gates_and_repair(
         self,
-        nodes: list[dict],
         snapshot_id: str,
         scope_draft_json: str,
         project_name: str = "project",
@@ -61,19 +60,21 @@ class RepairLoop:
         执行 Gate 检查，失败时触发一次修复重跑。
 
         完整流程：
-        1. 从 IR 节点收集文件
+        1. 从数据库加载最新快照节点
         2. 运行所有 Gate
         3. 通过 → 返回成功
         4. 失败 → 分类问题 → 重跑相关 Agent → 再次 Gate
         5. 再次失败 → 标记 needs_attention
 
-        - nodes: IR 快照中的节点列表
         - snapshot_id: 当前快照 ID
         - scope_draft_json: 原始 scope_draft JSON（用于重跑上下文）
-        - project_name: 项目名称
+        - project_name: 项目名称，用于日志
         - 返回: RepairResult
         """
         collector = ArtifactCollector()
+
+        # 从数据库加载最新快照节点
+        nodes = await self.load_snapshot_nodes(snapshot_id)
         files = collector.collect(nodes)
 
         # 第一轮 Gate 检查
@@ -197,9 +198,9 @@ class RepairLoop:
             )
 
         # 重新从数据库加载最新快照节点
-        return await self._load_snapshot_nodes(snapshot_id)
+        return await self.load_snapshot_nodes(snapshot_id)
 
-    async def _load_snapshot_nodes(self, snapshot_id: str) -> list[dict]:
+    async def load_snapshot_nodes(self, snapshot_id: str) -> list[dict]:
         """
         从数据库加载指定快照的所有 IR 节点。
 

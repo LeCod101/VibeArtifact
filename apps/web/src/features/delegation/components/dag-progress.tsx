@@ -279,7 +279,7 @@ export function DagProgress({
               <div className="text-sm">
                 <p className="font-medium text-amber-800">编译门禁未通过，需要人工介入</p>
                 <p className="text-amber-700 mt-0.5 text-xs">
-                  系统已自动尝试修复，但问题仍然存在。请检查生成代码后重新提交。
+                  系统已自动尝试修复 1 次，问题仍然存在。请检查生成代码后重新提交。
                 </p>
                 {Array.isArray((gateResult as Record<string, unknown>).all_issues) && (
                   <ul className="mt-2 space-y-0.5">
