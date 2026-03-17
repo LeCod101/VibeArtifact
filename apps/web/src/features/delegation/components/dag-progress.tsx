@@ -14,6 +14,7 @@ import {
   Loader2,
   XCircle,
   Clock,
+  AlertTriangle,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -54,7 +55,7 @@ const DAG_STAGES: DagStage[] = [
 /* ============ 工具函数 ============ */
 
 /** 步骤状态类型 */
-type StepStatus = "pending" | "running" | "completed" | "failed";
+type StepStatus = "pending" | "running" | "completed" | "failed" | "needs_attention";
 
 /**
  * 从 SSE 事件流中提取各 agent 的最新状态
@@ -128,6 +129,8 @@ function StatusIcon({ status }: { status: StepStatus }) {
       return <Loader2 className="h-5 w-5 text-blue-500 animate-spin" />;
     case "failed":
       return <XCircle className="h-5 w-5 text-red-500" />;
+    case "needs_attention":
+      return <AlertTriangle className="h-5 w-5 text-amber-500" />;
     case "pending":
     default:
       return <Circle className="h-5 w-5 text-muted-foreground/40" />;
@@ -145,6 +148,8 @@ function statusLabel(status: StepStatus): string {
       return "执行中";
     case "failed":
       return "失败";
+    case "needs_attention":
+      return "需要介入";
     case "pending":
     default:
       return "等待中";
@@ -160,6 +165,8 @@ interface DagProgressProps {
   sseEvents: SSEEventData[];
   /** 额外的 CSS 类名 */
   className?: string;
+  /** Gate 失败详情（needs_attention 时有值） */
+  gateResult?: Record<string, unknown> | null;
 }
 
 /**
@@ -173,6 +180,7 @@ export function DagProgress({
   runData,
   sseEvents,
   className,
+  gateResult,
 }: DagProgressProps) {
   // 合并 SSE 和 polling 的状态数据
   // SSE 优先（更实时），polling 兜底
@@ -215,6 +223,7 @@ export function DagProgress({
           status === "running" && "border-blue-200 bg-blue-50/50",
           status === "completed" && "border-emerald-200 bg-emerald-50/50",
           status === "failed" && "border-red-200 bg-red-50/50",
+          status === "needs_attention" && "border-amber-200 bg-amber-50/50",
           status === "pending" && "border-border bg-muted/30",
         )}
       >
@@ -227,6 +236,7 @@ export function DagProgress({
               status === "running" && "text-blue-600",
               status === "completed" && "text-emerald-600",
               status === "failed" && "text-red-600",
+              status === "needs_attention" && "text-amber-600",
               status === "pending" && "text-muted-foreground",
             )}
           >
@@ -260,6 +270,32 @@ export function DagProgress({
 
         {/* 串行阶段（质量检查、打包导出） */}
         {serialAfter.map(renderStageCard)}
+
+        {/* needs_attention 横幅：Gate 失败需要人工介入 */}
+        {gateResult && (
+          <div className="mt-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3">
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
+              <div className="text-sm">
+                <p className="font-medium text-amber-800">编译门禁未通过，需要人工介入</p>
+                <p className="text-amber-700 mt-0.5 text-xs">
+                  系统已自动尝试修复，但问题仍然存在。请检查生成代码后重新提交。
+                </p>
+                {Array.isArray((gateResult as Record<string, unknown>).all_issues) && (
+                  <ul className="mt-2 space-y-0.5">
+                    {((gateResult as Record<string, unknown>).all_issues as string[])
+                      .slice(0, 5)
+                      .map((issue, i) => (
+                        <li key={i} className="text-xs text-amber-700 font-mono">
+                          {issue}
+                        </li>
+                      ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

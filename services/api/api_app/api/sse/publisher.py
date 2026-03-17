@@ -197,3 +197,27 @@ async def publish_run_failed(
             "failed_step": failed_step,
         },
     )
+
+
+async def publish_needs_attention(
+    run_id: str,
+    gate_result: dict,
+) -> None:
+    """
+    发布 needs_attention 事件。
+
+    Gate 检查失败且自动修复无效时发布此事件，
+    前端收到后展示人工介入提示和失败详情。
+
+    - run_id: 运行 ID
+    - gate_result: Gate 汇总结果字典，包含失败门禁和问题列表
+    """
+    await publish_step_event(
+        run_id=run_id,
+        event_type="needs_attention",
+        data={
+            "run_id": run_id,
+            "gate_result": gate_result,
+            "message": "Gate 检查失败，需要人工介入",
+        },
+    )

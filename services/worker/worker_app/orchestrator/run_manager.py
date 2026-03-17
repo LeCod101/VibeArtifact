@@ -96,6 +96,7 @@ class RunStatus(StrEnum):
     RUNNING = "running"
     COMPLETED = "completed"
     FAILED = "failed"
+    NEEDS_ATTENTION = "needs_attention"
 
 
 class JobRun(Base):
@@ -458,3 +459,36 @@ class RunManager:
                 }
                 for row in rows
             ]
+
+    async def mark_run_needs_attention(
+        self,
+        run_id: UUID,
+        error_message: str,
+        gate_result: dict | None = None,
+    ) -> None:
+        """
+        将 run 标记为 needs_attention 状态。
+
+        Gate 检查失败且自动修复无效时调用，表示需要人工介入。
+        将 gate_result 写入 output_payload 供前端展示。
+
+        - run_id: job_run ID
+        - error_message: 失败原因摘要
+        - gate_result: Gate 检查结果字典（可选）
+        """
+        now = datetime.now(timezone.utc)
+        values: dict = {
+            "status": RunStatus.NEEDS_ATTENTION,
+            "error_message": error_message,
+            "completed_at": now,
+        }
+        if gate_result is not None:
+            values["output_payload"] = {"gate_result": gate_result}
+
+        async with self._session_factory() as session:
+            async with session.begin():
+                await session.execute(
+                    update(JobRun)
+                    .where(JobRun.id == run_id)
+                    .values(**values)
+                )

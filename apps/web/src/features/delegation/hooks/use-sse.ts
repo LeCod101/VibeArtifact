@@ -88,10 +88,11 @@ export function useSSE(
         setEvents((prev) => [...prev, parsed]);
         setLastEvent(parsed);
 
-        // 检测终结事件：run_complete 或 run_failed
+        // 检测终结事件：run_complete / run_failed / needs_attention
         if (
           parsed.event === "run_complete" ||
-          parsed.event === "run_failed"
+          parsed.event === "run_failed" ||
+          parsed.event === "needs_attention"
         ) {
           terminatedRef.current = true;
           es.close();

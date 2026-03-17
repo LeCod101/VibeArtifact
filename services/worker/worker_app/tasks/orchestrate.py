@@ -176,12 +176,44 @@ async def _run_delegated_dag_async(
 
             completed_results.extend(layer_results)
 
-        # 步骤 6：标记完成
+        # 步骤 6：Gate 检查 + 修复回路（M6 新增）
+        # 从数据库加载最新快照节点，运行三道门禁
+        from api_app.api.sse.publisher import publish_needs_attention
+        from runtime_tools.gates.repair_loop import RepairLoop
+
+        repair_loop = RepairLoop(manager=manager, run_id=run_uuid)
+        repair_result = await repair_loop.run_gates_and_repair(
+            nodes=await repair_loop._load_snapshot_nodes(snapshot_id),
+            snapshot_id=snapshot_id,
+            scope_draft_json=scope_draft_json,
+            project_name=project_id,
+        )
+
+        if repair_result.needs_attention:
+            # Gate 失败且修复无效，推送 SSE 通知并终止
+            logger.warning(
+                "Gate 检查失败且修复无效，标记 needs_attention: run_id=%s",
+                str(run_uuid),
+            )
+            await publish_needs_attention(
+                run_id=str(run_uuid),
+                gate_result=repair_result.gate_suite.to_dict(),
+            )
+            return {
+                "run_id": str(run_uuid),
+                "status": "needs_attention",
+                "gate_result": repair_result.gate_suite.to_dict(),
+                "results": completed_results,
+            }
+
+        # 步骤 7：标记完成
         await manager.mark_run_completed(
             run_uuid,
             output_payload={
                 "total_agents": len(all_agent_ids),
                 "total_layers": len(execution_plan),
+                "gate_passed": True,
+                "gate_repaired": repair_result.repaired,
             },
         )
 
