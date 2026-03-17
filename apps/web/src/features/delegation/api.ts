@@ -36,6 +36,8 @@ export interface DelegatedRunData {
   created_at: string | null;
   completed_at: string | null;
   error_message: string | null;
+  /** Gate 检查结果（needs_attention 时有值） */
+  output_payload: Record<string, unknown> | null;
 }
 
 /** SSE 事件数据结构 */

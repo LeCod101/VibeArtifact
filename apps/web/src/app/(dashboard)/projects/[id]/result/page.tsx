@@ -32,6 +32,8 @@ function runStatusLabel(status: string | undefined): string {
       return "已完成";
     case "failed":
       return "执行失败";
+    case "needs_attention":
+      return "需要介入";
     default:
       return "加载中";
   }
@@ -49,6 +51,8 @@ function runStatusStyle(status: string | undefined): string {
       return "text-emerald-600 bg-emerald-50";
     case "failed":
       return "text-red-600 bg-red-50";
+    case "needs_attention":
+      return "text-amber-600 bg-amber-50";
     default:
       return "text-muted-foreground bg-muted";
   }
@@ -142,7 +146,15 @@ export default function DelegatedResultPage() {
       )}
 
       {/* DAG 进度面板 */}
-      <DagProgress runData={runData} sseEvents={sseEvents} />
+      <DagProgress
+        runData={runData}
+        sseEvents={sseEvents}
+        gateResult={
+          runData?.status === "needs_attention"
+            ? (runData.output_payload?.gate_result as Record<string, unknown> ?? null)
+            : null
+        }
+      />
 
       {/* 运行失败提示 */}
       {runData?.status === "failed" && runData.error_message && (
