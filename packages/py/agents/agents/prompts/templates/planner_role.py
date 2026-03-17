@@ -1,3 +1,4 @@
+# ruff: noqa: E501
 """
 Planner Agent 完整角色 Prompt。
 

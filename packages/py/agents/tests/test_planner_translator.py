@@ -5,13 +5,11 @@ PlannerTranslator 测试模块。
 包括基础翻译、依赖边创建、非法 agent_id 和循环依赖检测。
 """
 
-import pytest
 from agents.schemas.high_level import TaskPlan, TaskStep
 from agents.translators.planner_translator import PlannerTranslator
 from ir_core.schema.edge_types import EdgeType
 from ir_core.schema.node_types import NodeType
 from ir_core.schema.operation_types import OperationType
-
 
 # ============================================================
 # 辅助函数

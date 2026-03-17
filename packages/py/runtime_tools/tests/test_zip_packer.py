@@ -10,8 +10,6 @@ import tempfile
 import zipfile
 from pathlib import Path
 
-import pytest
-
 from runtime_tools.exporters.collector import ArtifactCollector, FileEntry
 from runtime_tools.exporters.compose_gen import (
     generate_compose,
@@ -19,7 +17,6 @@ from runtime_tools.exporters.compose_gen import (
 )
 from runtime_tools.exporters.project_layout import normalize_path, resolve_conflicts
 from runtime_tools.exporters.zip_packer import ZipPacker
-
 
 # ============================================================
 # ZipPacker 测试

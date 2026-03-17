@@ -9,7 +9,6 @@ from unittest.mock import AsyncMock, MagicMock
 from uuid import UUID, uuid4
 
 import pytest
-
 from agents.configs.base import AgentConfig, ModelTier, RoleCategory
 from agents.configs.registry import AgentRegistry
 from pydantic import BaseModel
@@ -20,7 +19,6 @@ from worker_app.orchestrator.data_pipe import (
     assemble_step_input,
     parse_scope_draft,
 )
-
 
 # ============================================================
 # 辅助 fixture

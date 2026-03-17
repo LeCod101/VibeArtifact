@@ -5,14 +5,12 @@ Backend + Frontend Translator 测试模块。
 IROperation 列表的逻辑，包括节点创建、层级间依赖边和边界情况。
 """
 
-import pytest
 from agents.schemas.high_level import BackendPlan, FileSpec, FrontendPlan
 from agents.translators.backend_translator import BackendTranslator
 from agents.translators.frontend_translator import FrontendTranslator
 from ir_core.schema.edge_types import EdgeType
 from ir_core.schema.node_types import NodeType
 from ir_core.schema.operation_types import OperationType
-
 
 # ============================================================
 # 辅助函数

@@ -35,7 +35,6 @@ from sqlalchemy.ext.asyncio import (
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
-
 # ──────────────────────────────────────────────
 # Worker 端独立的数据库会话管理
 # ──────────────────────────────────────────────

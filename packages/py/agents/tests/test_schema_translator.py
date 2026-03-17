@@ -5,7 +5,6 @@ SchemaTranslator 测试模块。
 包括实体节点、端点节点、关联边和边界情况处理。
 """
 
-import pytest
 from agents.schemas.high_level import (
     EndpointSpec,
     EntitySpec,
@@ -16,7 +15,6 @@ from agents.translators.schema_translator import SchemaTranslator
 from ir_core.schema.edge_types import EdgeType
 from ir_core.schema.node_types import NodeType
 from ir_core.schema.operation_types import OperationType
-
 
 # ============================================================
 # 辅助函数

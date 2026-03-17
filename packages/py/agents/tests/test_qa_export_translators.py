@@ -17,7 +17,6 @@ from agents.translators.qa_translator import QATranslator
 from ir_core.schema.node_types import NodeType
 from ir_core.schema.operation_types import OperationType
 
-
 # ============================================================
 # 辅助函数
 # ============================================================

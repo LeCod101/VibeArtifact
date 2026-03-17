@@ -5,7 +5,6 @@ Doc + Diagram Translator 测试模块。
 包括基础翻译、缺少必要文件/图表的处理和边界情况。
 """
 
-import pytest
 from agents.schemas.high_level import (
     DiagramPlan,
     DiagramSpec,
@@ -16,7 +15,6 @@ from agents.translators.diagram_translator import DiagramTranslator
 from agents.translators.doc_translator import DocTranslator
 from ir_core.schema.node_types import NodeType
 from ir_core.schema.operation_types import OperationType
-
 
 # ============================================================
 # 辅助函数

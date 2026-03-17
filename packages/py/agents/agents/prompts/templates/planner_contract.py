@@ -1,3 +1,4 @@
+# ruff: noqa: E501
 """
 Planner Agent 的 Output Contract。
 

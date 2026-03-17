@@ -7,16 +7,13 @@ M6 Gate 集成测试。
 
 from __future__ import annotations
 
-import pytest
-
 from runtime_tools.exporters.collector import FileEntry
 from runtime_tools.gates.backend_gate import BackendGate
 from runtime_tools.gates.classifier import IssueClassifier
 from runtime_tools.gates.frontend_gate import FrontendGate
 from runtime_tools.gates.mermaid_gate import MermaidGate
-from runtime_tools.gates.models import GateResult, GateSuiteResult, GateStepResult
+from runtime_tools.gates.models import GateResult, GateStepResult, GateSuiteResult
 from runtime_tools.gates.runner import GateRunner
-
 
 # ──────────────────────────────────────────────
 # 测试数据
