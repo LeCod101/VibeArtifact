@@ -95,4 +95,36 @@ export interface MessageResponse {
   content: string;
   content_type: string;
   created_at: string;
+  /** 变更摘要（仅 assistant 消息可能携带） */
+  change_summary?: ChangeSummaryResponse;
+}
+
+/* ============ 对话模式相关 ============ */
+
+/** 发送消息请求 */
+export interface SendMessageRequest {
+  content: string;
+}
+
+/** 变更摘要 */
+export interface ChangeSummaryResponse {
+  summary: string;
+  affected_areas: string[];
+  operations_count: number;
+  agents_executed: string[];
+  new_snapshot_id: string | null;
+  warnings: string[];
+}
+
+/** 发送消息响应（含助手回复 + 变更摘要） */
+export interface SendMessageResponse {
+  user_message: MessageResponse;
+  assistant_message: MessageResponse;
+  change_summary: ChangeSummaryResponse;
+}
+
+/** 对话 SSE 事件数据 */
+export interface ChatSSEEvent {
+  event: string;
+  data: Record<string, unknown>;
 }

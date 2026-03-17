@@ -25,9 +25,11 @@ function L(obj: { zh: any; en: any }, locale: Locale) {
 
 interface MessageInputProps {
   conversationId: string;
+  /** AI 正在处理中，禁用输入 */
+  isProcessing?: boolean;
 }
 
-export function MessageInput({ conversationId }: MessageInputProps) {
+export function MessageInput({ conversationId, isProcessing = false }: MessageInputProps) {
   const { locale } = useLocale();
   const sendMutation = useSendMessageMutation(conversationId);
   const [content, setContent] = useState("");
@@ -38,7 +40,6 @@ export function MessageInput({ conversationId }: MessageInputProps) {
 
     try {
       await sendMutation.mutateAsync({
-        role: "user",
         content: trimmed,
       });
       setContent("");
@@ -70,22 +71,27 @@ export function MessageInput({ conversationId }: MessageInputProps) {
 
         {/* 文本输入区 */}
         <Textarea
-          placeholder={L(t.project.messagePlaceholder, locale)}
+          placeholder={
+            isProcessing
+              ? "AI 正在思考..."
+              : L(t.project.messagePlaceholder, locale)
+          }
           value={content}
           onChange={(e) => setContent(e.target.value)}
           onKeyDown={handleKeyDown}
           rows={1}
-          className="min-h-[36px] max-h-[120px] resize-none border-none bg-transparent shadow-none focus-visible:ring-0 px-0"
+          disabled={isProcessing}
+          className="min-h-[36px] max-h-[120px] resize-none border-none bg-transparent shadow-none focus-visible:ring-0 px-0 disabled:cursor-not-allowed disabled:opacity-60"
         />
 
         {/* 发送按钮 */}
         <button
           type="button"
           onClick={handleSend}
-          disabled={!content.trim() || sendMutation.isPending}
+          disabled={!content.trim() || sendMutation.isPending || isProcessing}
           className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground disabled:opacity-30 transition-opacity shrink-0 mb-0.5"
         >
-          {sendMutation.isPending ? (
+          {sendMutation.isPending || isProcessing ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
             <Send size={14} />

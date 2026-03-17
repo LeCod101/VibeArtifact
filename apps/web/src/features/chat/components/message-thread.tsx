@@ -17,6 +17,7 @@ import t from "@/i18n/translations";
 import type { Locale } from "@/i18n/translations";
 import type { MessageResponse } from "@/lib/api-client/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { ChangeSummary } from "@/features/chat/components/change-summary";
 
 /** 多语言取值辅助函数 */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -127,6 +128,14 @@ function MessageBubble({ message }: { message: MessageResponse }) {
           >
             {formatTime(created_at)}
           </p>
+
+          {/* 助手消息的变更摘要卡片 */}
+          {!isUser && message.change_summary && (
+            <ChangeSummary
+              summary={message.change_summary}
+              className="mt-2 max-w-full"
+            />
+          )}
         </div>
       </div>
     </div>

@@ -8,8 +8,9 @@ import { apiGet, apiPost } from "@/lib/api-client";
 import type {
   CreateConversationRequest,
   ConversationResponse,
-  SaveMessageRequest,
   MessageResponse,
+  SendMessageRequest,
+  SendMessageResponse,
 } from "@/lib/api-client/types";
 
 /**
@@ -66,17 +67,20 @@ export function useMessagesQuery(conversationId: string | null) {
 }
 
 /**
- * 发送消息 mutation
+ * 发送消息 mutation（对话模式）
  *
+ * 调用 POST /conversations/{id}/messages 发送用户消息，
+ * 后端会自动触发 Agent 处理并返回助手回复 + 变更摘要。
  * 发送成功后自动刷新消息列表缓存。
+ *
  * @param conversationId - 对话 UUID
  */
 export function useSendMessageMutation(conversationId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: SaveMessageRequest) =>
-      apiPost<MessageResponse>(
+    mutationFn: (data: SendMessageRequest) =>
+      apiPost<SendMessageResponse>(
         `/api/v1/conversations/${conversationId}/messages`,
         data
       ),

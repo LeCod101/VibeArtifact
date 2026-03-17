@@ -93,3 +93,33 @@ class ConversationService:
             该项目下的对话列表
         """
         return await self.conversation_repo.list_by_project(project_id=project_id, offset=offset, limit=limit)
+
+    async def get_branch_with_snapshot(
+        self, branch_id: UUID
+    ) -> ConversationBranch:
+        """获取分支信息（含 head_snapshot_id）。
+
+        参数:
+            branch_id: 分支 UUID
+
+        返回:
+            ConversationBranch 实例
+
+        异常:
+            如果分支不存在，返回 None（由调用方处理）
+        """
+        return await self.branch_repo.get_by_id(branch_id)
+
+    async def update_branch_head(
+        self, branch_id: UUID, new_snapshot_id: UUID
+    ) -> None:
+        """更新分支的 head_snapshot_id。
+
+        参数:
+            branch_id: 分支 UUID
+            new_snapshot_id: 新的快照 UUID
+        """
+        branch = await self.branch_repo.get_by_id(branch_id)
+        if branch is not None:
+            branch.head_snapshot_id = new_snapshot_id
+            await self.session.flush()
