@@ -16,7 +16,7 @@
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Loader2, Sparkles, CheckCircle2, MessageSquare, Lightbulb } from "lucide-react";
+import { ArrowLeft, Loader2, Sparkles, CheckCircle2, MessageSquare, Lightbulb, Rocket } from "lucide-react";
 import { toast } from "sonner";
 import { useLocale } from "@/i18n/context";
 import t from "@/i18n/translations";
@@ -206,6 +206,13 @@ export default function IdeationPage() {
             <Lightbulb size={16} />
             {L(t.generation.ideationTitle, locale)}
           </span>
+          <Link
+            href={`/projects/${projectId}/delegation`}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+          >
+            <Rocket size={16} />
+            {L(t.delegation.tab, locale)}
+          </Link>
         </nav>
       </div>
 
@@ -376,11 +383,26 @@ export default function IdeationPage() {
             <h2 className="font-heading text-xl font-bold mb-2">
               {L(t.generation.confirmed, locale)}
             </h2>
-            <p className="text-sm text-muted-foreground mb-6">
+            <p className="text-sm text-muted-foreground mb-8">
               {L(t.generation.scopeLocked, locale)}
             </p>
+
+            {/* 全权委托 CTA */}
             <Button
-              variant="outline"
+              size="lg"
+              className="mb-4 px-8 py-6 text-base font-semibold gap-2"
+              onClick={() => router.push(`/projects/${projectId}/delegation`)}
+            >
+              <Rocket size={18} />
+              {L(t.generation.startDelegation, locale)}
+            </Button>
+            <p className="text-xs text-muted-foreground max-w-sm text-center mb-6">
+              {L(t.generation.startDelegationDesc, locale)}
+            </p>
+
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => router.push(`/projects/${projectId}`)}
             >
               <ArrowLeft size={14} className="mr-1.5" />

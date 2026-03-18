@@ -7,7 +7,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, MessageSquare, LogOut, Languages } from "lucide-react";
+import { LayoutDashboard, LogOut, Languages } from "lucide-react";
 import { useLocale } from "@/i18n/context";
 import t from "@/i18n/translations";
 import type { Locale } from "@/i18n/translations";
@@ -30,7 +30,6 @@ function L(obj: { zh: any; en: any }, locale: Locale) {
 /** 导航项定义 */
 const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: { zh: "仪表盘", en: "Dashboard" } },
-  { href: "/conversations", icon: MessageSquare, label: { zh: "对话", en: "Conversations" } },
 ];
 
 export function Sidebar() {

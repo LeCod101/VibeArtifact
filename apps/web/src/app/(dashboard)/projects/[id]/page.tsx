@@ -9,7 +9,7 @@
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Lightbulb, Loader2, MessageSquare } from "lucide-react";
+import { ArrowLeft, Lightbulb, Loader2, MessageSquare, Rocket } from "lucide-react";
 import { useLocale } from "@/i18n/context";
 import t from "@/i18n/translations";
 import type { Locale } from "@/i18n/translations";
@@ -84,6 +84,13 @@ export default function ProjectDetailPage() {
           >
             <Lightbulb size={16} />
             {L(t.generation.ideationTitle, locale)}
+          </Link>
+          <Link
+            href={`/projects/${projectId}/delegation`}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+          >
+            <Rocket size={16} />
+            {L(t.delegation.tab, locale)}
           </Link>
         </nav>
       </div>

@@ -12,6 +12,9 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useCreateDelegatedRun } from "@/features/delegation/hooks/use-delegated";
 import { ApiError } from "@/lib/api-client/errors";
+import { useLocale } from "@/i18n/context";
+import t from "@/i18n/translations";
+import type { Locale } from "@/i18n/translations";
 
 interface DelegatedTriggerProps {
   /** 项目 UUID */
@@ -20,6 +23,11 @@ interface DelegatedTriggerProps {
   snapshotId?: string;
   /** 额外的 CSS 类名 */
   className?: string;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function L(obj: { zh: any; en: any }, locale: Locale) {
+  return obj[locale];
 }
 
 /**
@@ -35,6 +43,7 @@ export function DelegatedTrigger({
   className,
 }: DelegatedTriggerProps) {
   const router = useRouter();
+  const { locale } = useLocale();
   const mutation = useCreateDelegatedRun(projectId);
 
   /** 处理点击事件 */
@@ -58,11 +67,11 @@ export function DelegatedTrigger({
     if (mutation.error instanceof ApiError) {
       // 409 并发冲突
       if (mutation.error.status === 409) {
-        return "已有运行中的任务，请等待完成后再试";
+        return L(t.delegation.conflictError, locale);
       }
       return mutation.error.detail;
     }
-    return "创建运行失败，请稍后重试";
+    return L(t.delegation.createError, locale);
   }
 
   const errorMessage = getErrorMessage();
@@ -80,7 +89,7 @@ export function DelegatedTrigger({
         ) : (
           <Rocket className="h-4 w-4" />
         )}
-        {mutation.isPending ? "正在创建..." : "开始全权委托"}
+        {mutation.isPending ? L(t.delegation.creating, locale) : L(t.delegation.startBtn, locale)}
       </Button>
 
       {/* 错误提示 */}

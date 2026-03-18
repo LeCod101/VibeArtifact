@@ -354,6 +354,11 @@ const translations = {
     confirmed: { zh: "Scope 已确认", en: "Scope Confirmed" },
     reanalyze: { zh: "重新分析", en: "Re-analyze" },
     backToProject: { zh: "返回项目", en: "Back to Project" },
+    startDelegation: { zh: "开始全权委托", en: "Start Full Delegation" },
+    startDelegationDesc: {
+      zh: "系统将自动为您生成完整的前后端代码、数据库、文档与部署配置。",
+      en: "The system will automatically generate complete frontend/backend code, database, documentation, and deployment configs.",
+    },
     scopeTitle: { zh: "功能范围", en: "Feature Scope" },
     deferredItems: { zh: "延后项", en: "Deferred Items" },
     steps: {
@@ -376,6 +381,32 @@ const translations = {
       high: { zh: "高", en: "High" },
       medium: { zh: "中", en: "Medium" },
       low: { zh: "低", en: "Low" },
+    },
+  },
+
+  /* ============ 全权委托 ============ */
+  delegation: {
+    tab: { zh: "全权委托", en: "Delegation" },
+    title: { zh: "全权委托", en: "Full Delegation" },
+    triggerTitle: { zh: "启动全权委托", en: "Launch Delegation" },
+    triggerDesc: {
+      zh: "系统将自动执行完整 Agent 链路，生成前后端代码、数据库、文档与部署配置。",
+      en: "The system will execute the full Agent pipeline to generate frontend/backend code, database, documentation, and deployment configs.",
+    },
+    startBtn: { zh: "开始全权委托", en: "Start Delegation" },
+    historyTitle: { zh: "全权委托历史", en: "Delegation History" },
+    emptyState: { zh: "暂无运行记录", en: "No runs yet" },
+    triggerBtn: { zh: "触发全权委托", en: "Trigger Delegation" },
+    statusRunning: { zh: "运行中", en: "Running" },
+    statusCompleted: { zh: "已完成", en: "Completed" },
+    creating: { zh: "正在创建...", en: "Creating..." },
+    conflictError: {
+      zh: "已有运行中的任务，请等待完成后再试",
+      en: "A run is already in progress. Please wait for it to complete.",
+    },
+    createError: {
+      zh: "创建运行失败，请稍后重试",
+      en: "Failed to create run. Please try again later.",
     },
   },
 
