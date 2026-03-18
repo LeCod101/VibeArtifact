@@ -109,9 +109,9 @@ class TestRegistryEdgeCases:
         )
         registry.register(config)
 
-        # 再次注册同一 agent_id 应抛出 ValueError
-        with pytest.raises(ValueError, match="已注册"):
-            registry.register(config)
+        # 再次注册同一 agent_id 应幂等跳过，不抛异常
+        registry.register(config)
+        assert len(registry.list_agents()) == 1
 
     def test_reset_clears_registry(self):
         """reset() 后注册表为空。"""
