@@ -14,6 +14,7 @@ class ProjectStatus(enum.Enum):
 
     active = "active"
     archived = "archived"
+    deleted = "deleted"
 
 
 class ModelTier(enum.Enum):

@@ -10,7 +10,7 @@ from platform_data.models.conversation import (
     ConversationBranch,
     ConversationMode,
 )
-from platform_data.models.project import Project
+from platform_data.models.project import Project, ProjectStatus
 from platform_data.repositories.branch_repo import BranchRepository
 from platform_data.repositories.conversation_repo import ConversationRepository
 from platform_data.repositories.project_repo import ProjectRepository
@@ -123,3 +123,56 @@ class ProjectService:
             项目实例，不存在则返回 None
         """
         return await self.project_repo.get_by_id(project_id)
+
+    async def update_project(
+        self,
+        project_id: UUID,
+        user_id: UUID,
+        name: str | None = None,
+        description: str | None = None,
+    ) -> Project | None:
+        """更新项目名称和描述。
+
+        仅更新传入的非 None 字段。验证项目属于指定用户。
+
+        参数:
+            project_id: 项目 UUID
+            user_id: 当前用户 UUID，用于权限校验
+            name: 新的项目名称，None 表示不更新
+            description: 新的项目描述，None 表示不更新
+
+        返回:
+            更新后的 Project 实例，项目不存在或不属于该用户则返回 None
+        """
+        project = await self.project_repo.get_by_id(project_id)
+        if project is None or project.user_id != user_id:
+            return None
+
+        if name is not None:
+            project.name = name
+        if description is not None:
+            project.description = description
+
+        return await self.project_repo.update(project)
+
+    async def delete_project(
+        self,
+        project_id: UUID,
+        user_id: UUID,
+    ) -> bool:
+        """软删除项目（将状态设为 deleted）。
+
+        参数:
+            project_id: 项目 UUID
+            user_id: 当前用户 UUID，用于权限校验
+
+        返回:
+            删除成功返回 True，项目不存在或不属于该用户返回 False
+        """
+        project = await self.project_repo.get_by_id(project_id)
+        if project is None or project.user_id != user_id:
+            return False
+
+        project.status = ProjectStatus.deleted
+        await self.project_repo.update(project)
+        return True

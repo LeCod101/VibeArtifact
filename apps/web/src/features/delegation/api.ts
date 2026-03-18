@@ -4,7 +4,9 @@
  * 封装全权委托运行的创建、查询和下载 URL 构造。
  * 与后端 /api/v1/projects/{projectId}/delegated-runs 对接。
  */
+import { useQuery } from "@tanstack/react-query";
 import { apiGet, apiPost } from "@/lib/api-client";
+import type { DelegatedRunListItem } from "@/lib/api-client/types";
 
 /* ============ 类型定义 ============ */
 
@@ -102,4 +104,21 @@ export function getDelegatedRun(
 export function getDownloadUrl(projectId: string, runId: string): string {
   const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
   return `${base}/api/v1/projects/${projectId}/delegated-runs/${runId}/download`;
+}
+
+/**
+ * 获取项目的全权委托运行列表
+ *
+ * @param projectId - 项目 UUID
+ * @returns 运行列表（按创建时间倒序）
+ */
+export function useDelegatedRunsQuery(projectId: string) {
+  return useQuery({
+    queryKey: ["delegated-runs", projectId],
+    queryFn: () =>
+      apiGet<DelegatedRunListItem[]>(
+        `/api/v1/projects/${projectId}/delegated-runs`,
+      ),
+    enabled: !!projectId,
+  });
 }
