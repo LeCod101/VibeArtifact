@@ -7,7 +7,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, LogOut, Languages } from "lucide-react";
+import { LayoutDashboard, FolderOpen, LogOut, Languages } from "lucide-react";
 import { useLocale } from "@/i18n/context";
 import t from "@/i18n/translations";
 import type { Locale } from "@/i18n/translations";
@@ -30,6 +30,7 @@ function L(obj: { zh: any; en: any }, locale: Locale) {
 /** 导航项定义 */
 const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: { zh: "仪表盘", en: "Dashboard" } },
+  { href: "/projects", icon: FolderOpen, label: { zh: "项目", en: "Projects" } },
 ];
 
 export function Sidebar() {
@@ -82,6 +83,9 @@ export function Sidebar() {
           );
         })}
       </nav>
+
+      {/* 分隔线 */}
+      <div className="w-8 border-t border-sidebar-accent my-2" />
 
       {/* 间隔 */}
       <div className="flex-1" />

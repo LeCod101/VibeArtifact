@@ -129,6 +129,71 @@ def _calc_duration_ms(
 # ============================================================
 
 
+@router.get("", response_model=list[DelegatedRunResponse])
+async def list_delegated_runs(
+    project_id: UUID,
+    offset: int = 0,
+    limit: int = 50,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> list[DelegatedRunResponse]:
+    """列出项目的全部委托运行记录，按创建时间倒序排列。
+
+    参数：
+        project_id: 项目 UUID
+        offset: 分页偏移量，默认 0
+        limit: 每页数量，默认 50
+        current_user: 当前认证用户
+        db: 异步数据库会话
+
+    返回：
+        DelegatedRunResponse 列表
+    """
+    await _get_user_project(project_id, current_user, db)
+
+    result = await db.execute(
+        select(JobRun)
+        .where(JobRun.project_id == project_id)
+        .order_by(JobRun.created_at.desc())
+        .offset(offset)
+        .limit(limit)
+    )
+    job_runs = result.scalars().all()
+
+    responses = []
+    for job_run in job_runs:
+        run_status = (
+            job_run.status.value
+            if hasattr(job_run.status, "value")
+            else str(job_run.status)
+        )
+        responses.append(
+            DelegatedRunResponse(
+                run_id=str(job_run.id),
+                status=run_status,
+                steps=[],
+                created_at=(
+                    job_run.created_at.isoformat()
+                    if job_run.created_at
+                    else None
+                ),
+                completed_at=(
+                    job_run.completed_at.isoformat()
+                    if job_run.completed_at
+                    else None
+                ),
+                error_message=job_run.error_message,
+            )
+        )
+
+    return responses
+
+
+# ============================================================
+# 8.3b 创建全权委托运行
+# ============================================================
+
+
 @router.post("", response_model=CreateDelegatedRunResponse)
 async def create_delegated_run(
     project_id: UUID,

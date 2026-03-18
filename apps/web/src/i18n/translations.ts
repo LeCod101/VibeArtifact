@@ -277,6 +277,8 @@ const translations = {
     emptyTitle: { zh: "还没有项目", en: "No projects yet" },
     emptyDesc: { zh: "创建你的第一个项目吧", en: "Create your first project" },
     sidebarDashboard: { zh: "仪表盘", en: "Dashboard" },
+    sidebarProjects: { zh: "项目", en: "Projects" },
+    viewAllProjects: { zh: "查看全部项目", en: "View All Projects" },
   },
 
   /* ============ 问候语 ============ */
@@ -303,6 +305,9 @@ const translations = {
       archived: { zh: "已归档", en: "Archived" },
     },
     conversations: { zh: "对话", en: "Conversations" },
+    overview: { zh: "概览", en: "Overview" },
+    runs: { zh: "运行记录", en: "Runs" },
+    artifacts: { zh: "产物", en: "Artifacts" },
     newConversation: { zh: "新建对话", en: "New Conversation" },
     conversationTitle: { zh: "对话标题", en: "Conversation Title" },
     conversationPlaceholder: { zh: "输入对话标题（可选）", en: "Enter conversation title (optional)" },
@@ -419,6 +424,72 @@ const translations = {
     confirm: { zh: "确认", en: "Confirm" },
     cancel: { zh: "取消", en: "Cancel" },
     language: { zh: "语言", en: "Language" },
+    search: { zh: "搜索", en: "Search" },
+    sortNewest: { zh: "最新优先", en: "Newest First" },
+    sortOldest: { zh: "最早优先", en: "Oldest First" },
+    sortName: { zh: "按名称", en: "By Name" },
+    noData: { zh: "暂无数据", en: "No data" },
+    edit: { zh: "编辑", en: "Edit" },
+    save: { zh: "保存", en: "Save" },
+    delete: { zh: "删除", en: "Delete" },
+  },
+
+  /* ============ 项目列表页 ============ */
+  projectList: {
+    title: { zh: "所有项目", en: "All Projects" },
+    searchPlaceholder: { zh: "按名称搜索项目...", en: "Search projects by name..." },
+    emptyTitle: { zh: "还没有项目", en: "No projects yet" },
+    emptyDesc: { zh: "创建你的第一个项目，开始你的创意之旅", en: "Create your first project and start your creative journey" },
+    lastUpdated: { zh: "最后更新", en: "Last updated" },
+  },
+
+  /* ============ 项目概览页 ============ */
+  projectOverview: {
+    title: { zh: "项目概览", en: "Project Overview" },
+    conversations: { zh: "对话", en: "Conversations" },
+    snapshots: { zh: "快照", en: "Snapshots" },
+    delegationRuns: { zh: "委托运行", en: "Delegation Runs" },
+    recentActivity: { zh: "最近活动", en: "Recent Activity" },
+    noActivity: { zh: "暂无活动记录", en: "No recent activity" },
+    quickActions: { zh: "快捷操作", en: "Quick Actions" },
+    newConversation: { zh: "新建对话", en: "New Conversation" },
+    startIdeation: { zh: "开始构思", en: "Start Ideation" },
+    fullDelegation: { zh: "全权委托", en: "Full Delegation" },
+    editProject: { zh: "编辑项目", en: "Edit Project" },
+    saveSuccess: { zh: "项目已更新", en: "Project updated" },
+  },
+
+  /* ============ 委托运行历史页 ============ */
+  runsHistory: {
+    title: { zh: "运行历史", en: "Run History" },
+    runId: { zh: "运行 ID", en: "Run ID" },
+    status: { zh: "状态", en: "Status" },
+    created: { zh: "创建时间", en: "Created" },
+    completed: { zh: "完成时间", en: "Completed" },
+    duration: { zh: "耗时", en: "Duration" },
+    emptyTitle: { zh: "还没有运行记录", en: "No runs yet" },
+    emptyDesc: { zh: "启动全权委托后，运行记录会出现在这里", en: "Run records will appear here after you start a delegation" },
+    statusPending: { zh: "等待中", en: "Pending" },
+    statusRunning: { zh: "运行中", en: "Running" },
+    statusCompleted: { zh: "已完成", en: "Completed" },
+    statusFailed: { zh: "失败", en: "Failed" },
+    statusNeedsAttention: { zh: "需要关注", en: "Needs Attention" },
+  },
+
+  /* ============ 产物页 ============ */
+  artifacts: {
+    title: { zh: "项目产物", en: "Artifacts" },
+    emptyTitle: { zh: "暂无产物", en: "No artifacts yet" },
+    emptyDesc: { zh: "运行全权委托后，生成的产物会出现在这里", en: "Generated artifacts will appear here after a delegation run" },
+    kind: {
+      frontend_code: { zh: "前端代码", en: "Frontend Code" },
+      backend_code: { zh: "后端代码", en: "Backend Code" },
+      doc: { zh: "文档", en: "Documentation" },
+      diagram: { zh: "图表", en: "Diagram" },
+      config: { zh: "配置", en: "Config" },
+      other: { zh: "其他", en: "Other" },
+    },
+    version: { zh: "版本", en: "Version" },
   },
 } as const;
 

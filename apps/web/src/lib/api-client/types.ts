@@ -128,3 +128,46 @@ export interface ChatSSEEvent {
   event: string;
   data: Record<string, unknown>;
 }
+
+/* ============ 更新项目 ============ */
+
+/** 更新项目请求 */
+export interface UpdateProjectRequest {
+  name?: string;
+  description?: string;
+}
+
+/* ============ 快照相关 ============ */
+
+/** 快照信息响应 */
+export interface SnapshotResponse {
+  id: string;
+  project_id: string;
+  version: number;
+  parent_id: string | null;
+  status: string;
+  created_at: string;
+}
+
+/* ============ 产物相关 ============ */
+
+/** 产物信息响应 */
+export interface ArtifactResponse {
+  id: string;
+  project_id: string;
+  snapshot_id: string;
+  name: string;
+  kind: string;
+  content_hash: string | null;
+  created_at: string;
+}
+
+/* ============ 全权委托运行列表 ============ */
+
+/** 全权委托运行列表项 */
+export interface DelegatedRunListItem {
+  run_id: string;
+  status: string;
+  created_at: string | null;
+  completed_at: string | null;
+}

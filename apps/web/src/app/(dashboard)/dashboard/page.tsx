@@ -8,6 +8,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   Plus,
   ArrowUp,
@@ -15,6 +16,7 @@ import {
   FolderOpen,
   Loader2,
   ChevronDown,
+  ArrowRight,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useLocale } from "@/i18n/context";
@@ -174,15 +176,27 @@ export default function DashboardPage() {
               <h2 className="text-sm font-medium text-muted-foreground">
                 {L(t.greeting.recentProjects, locale)}
               </h2>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setDialogOpen(true)}
-                className="gap-1 text-muted-foreground"
-              >
-                <Plus size={14} />
-                {L(t.dashboard.newProject, locale)}
-              </Button>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setDialogOpen(true)}
+                  className="gap-1 text-muted-foreground"
+                >
+                  <Plus size={14} />
+                  {L(t.dashboard.newProject, locale)}
+                </Button>
+                <Link href="/projects">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="gap-1 text-muted-foreground"
+                  >
+                    {L(t.dashboard.viewAllProjects, locale)}
+                    <ArrowRight size={14} />
+                  </Button>
+                </Link>
+              </div>
             </div>
 
             {/* 项目卡片网格 */}

@@ -9,12 +9,9 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import Link from "next/link";
 import {
   ArrowLeft,
-  Lightbulb,
   Loader2,
-  MessageSquare,
   Rocket,
   Clock,
   FileText,
@@ -25,6 +22,7 @@ import type { Locale } from "@/i18n/translations";
 import { useProjectQuery } from "@/features/project/api";
 import { DelegatedTrigger } from "@/features/delegation/components/delegated-trigger";
 import { Button } from "@/components/ui/button";
+import { ProjectTabs } from "@/features/project/components/project-tabs";
 
 /** 多语言取值辅助函数 */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -66,26 +64,7 @@ export default function DelegationPage() {
           <h2 className="text-lg font-bold">{project?.name}</h2>
         </div>
         {/* 项目内导航 tab */}
-        <nav className="flex items-center gap-1">
-          <Link
-            href={`/projects/${projectId}`}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
-          >
-            <MessageSquare size={16} />
-            {L(t.project.conversations, locale)}
-          </Link>
-          <Link
-            href={`/projects/${projectId}/ideation`}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
-          >
-            <Lightbulb size={16} />
-            {L(t.generation.ideationTitle, locale)}
-          </Link>
-          <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium bg-secondary text-foreground">
-            <Rocket size={16} />
-            {L(t.delegation.tab, locale)}
-          </span>
-        </nav>
+        <ProjectTabs projectId={projectId} />
       </div>
 
       {/* 主内容区 */}

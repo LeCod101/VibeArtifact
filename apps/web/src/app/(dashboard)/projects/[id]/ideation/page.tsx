@@ -15,8 +15,7 @@
 
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import Link from "next/link";
-import { ArrowLeft, Loader2, Sparkles, CheckCircle2, MessageSquare, Lightbulb, Rocket } from "lucide-react";
+import { ArrowLeft, Loader2, Rocket, Sparkles, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { useLocale } from "@/i18n/context";
 import t from "@/i18n/translations";
@@ -39,6 +38,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ApiError } from "@/lib/api-client/errors";
 import { cn } from "@/lib/utils";
+import { ProjectTabs } from "@/features/project/components/project-tabs";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function L(obj: { zh: any; en: any }, locale: Locale) {
@@ -192,28 +192,7 @@ export default function IdeationPage() {
           <h2 className="text-lg font-bold">{project?.name}</h2>
         </div>
         {/* 项目内导航 tab */}
-        <nav className="flex items-center gap-1">
-          <Link
-            href={`/projects/${projectId}`}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
-          >
-            <MessageSquare size={16} />
-            {L(t.project.conversations, locale)}
-          </Link>
-          <span
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium bg-secondary text-foreground"
-          >
-            <Lightbulb size={16} />
-            {L(t.generation.ideationTitle, locale)}
-          </span>
-          <Link
-            href={`/projects/${projectId}/delegation`}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
-          >
-            <Rocket size={16} />
-            {L(t.delegation.tab, locale)}
-          </Link>
-        </nav>
+        <ProjectTabs projectId={projectId} />
       </div>
 
       {/* 步骤指示器 */}

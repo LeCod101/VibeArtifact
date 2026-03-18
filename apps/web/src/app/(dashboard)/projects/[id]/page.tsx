@@ -8,8 +8,7 @@
 
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import Link from "next/link";
-import { ArrowLeft, Lightbulb, Loader2, MessageSquare, Rocket } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { useLocale } from "@/i18n/context";
 import t from "@/i18n/translations";
 import type { Locale } from "@/i18n/translations";
@@ -21,6 +20,7 @@ import { CreateConversationDialog } from "@/features/chat/components/create-conv
 import { MessageThread } from "@/features/chat/components/message-thread";
 import { MessageInput } from "@/features/chat/components/message-input";
 import { Button } from "@/components/ui/button";
+import { ProjectTabs } from "@/features/project/components/project-tabs";
 
 /** 多语言取值辅助函数 */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -71,28 +71,7 @@ export default function ProjectDetailPage() {
           )}
         </div>
         {/* 项目内导航 tab */}
-        <nav className="flex items-center gap-1">
-          <span
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium bg-secondary text-foreground"
-          >
-            <MessageSquare size={16} />
-            {L(t.project.conversations, locale)}
-          </span>
-          <Link
-            href={`/projects/${projectId}/ideation`}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
-          >
-            <Lightbulb size={16} />
-            {L(t.generation.ideationTitle, locale)}
-          </Link>
-          <Link
-            href={`/projects/${projectId}/delegation`}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
-          >
-            <Rocket size={16} />
-            {L(t.delegation.tab, locale)}
-          </Link>
-        </nav>
+        <ProjectTabs projectId={projectId} />
       </div>
 
       {/* 主内容区 */}

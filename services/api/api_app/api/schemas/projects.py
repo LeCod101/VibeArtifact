@@ -18,6 +18,18 @@ class CreateProjectRequest(BaseModel):
     description: str | None = None
 
 
+class UpdateProjectRequest(BaseModel):
+    """更新项目请求。
+
+    字段：
+        name: 项目名称，可选
+        description: 项目描述，可选
+    """
+
+    name: str | None = None
+    description: str | None = None
+
+
 class ProjectResponse(BaseModel):
     """项目信息响应 - 返回项目基本信息。
 

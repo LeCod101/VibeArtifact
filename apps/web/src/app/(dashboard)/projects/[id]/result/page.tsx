@@ -13,6 +13,7 @@
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ProjectTabs } from "@/features/project/components/project-tabs";
 import { useProjectQuery } from "@/features/project/api";
 import { useSSE } from "@/features/delegation/hooks/use-sse";
 import { useDelegatedRun } from "@/features/delegation/hooks/use-delegated";
@@ -126,6 +127,9 @@ export default function DelegatedResultPage() {
           {runStatusLabel(runData?.status)}
         </span>
       </div>
+
+      {/* 项目内导航 tab */}
+      <ProjectTabs projectId={projectId} />
 
       {/* SSE 连接状态提示 */}
       {sseError && (

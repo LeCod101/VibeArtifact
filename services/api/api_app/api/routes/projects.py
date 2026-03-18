@@ -2,13 +2,17 @@
 
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from platform_data.models.user import User
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api_app.api.deps.auth import get_current_user
 from api_app.api.deps.db import get_db
-from api_app.api.schemas.projects import CreateProjectRequest, ProjectResponse
+from api_app.api.schemas.projects import (
+    CreateProjectRequest,
+    ProjectResponse,
+    UpdateProjectRequest,
+)
 from api_app.application.services.project_service import ProjectService
 
 router = APIRouter(prefix="/projects", tags=["projects"])
@@ -105,3 +109,82 @@ async def get_project(
         )
 
     return project
+
+
+@router.put("/{project_id}", response_model=ProjectResponse)
+async def update_project(
+    project_id: UUID,
+    body: UpdateProjectRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> ProjectResponse:
+    """更新项目名称和描述。
+
+    仅更新请求体中非 None 的字段。
+
+    参数：
+        project_id: 项目 UUID（路径参数）
+        body: 更新请求体（name、description 均可选）
+        current_user: 当前认证用户
+        db: 异步数据库会话
+
+    返回：
+        ProjectResponse（更新后的项目信息）
+
+    异常：
+        404: 项目不存在或不属于当前用户
+    """
+    service = ProjectService(db)
+    project = await service.update_project(
+        project_id=project_id,
+        user_id=current_user.id,
+        name=body.name,
+        description=body.description,
+    )
+
+    if project is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="项目不存在",
+        )
+
+    await db.commit()
+    return project
+
+
+@router.delete(
+    "/{project_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def delete_project(
+    project_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> Response:
+    """软删除项目（将状态设为 deleted）。
+
+    参数：
+        project_id: 项目 UUID（路径参数）
+        current_user: 当前认证用户
+        db: 异步数据库会话
+
+    返回：
+        204 No Content
+
+    异常：
+        404: 项目不存在或不属于当前用户
+    """
+    service = ProjectService(db)
+    deleted = await service.delete_project(
+        project_id=project_id,
+        user_id=current_user.id,
+    )
+
+    if not deleted:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="项目不存在",
+        )
+
+    await db.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
