@@ -12,17 +12,16 @@ M7 ColdStartBootstrap 单元测试。
 - apply_operations 抛 ApplyError 时记录 warning 并继续
 """
 
-import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 from uuid import uuid4
 
-from agents.analysis.cold_start import ColdStartBootstrap, ColdStartResult
+import pytest
+from agents.analysis.cold_start import ColdStartBootstrap
 from agents.executors.runner import AgentRunResult
 from agents.schemas.base import AgentOutput
 from ir_core.operations.apply import ApplyError
-from ir_core.schema.data import IRNodeData, IREdgeData
+from ir_core.schema.data import IRNodeData
 from ir_core.validators.result import ValidationResult
-
 
 # ============================================================
 # 测试辅助函数
@@ -124,7 +123,7 @@ class TestColdStartBootstrap:
         mock_runner.run = AsyncMock(return_value=make_mock_result())
 
         bootstrap = ColdStartBootstrap(runner=mock_runner)
-        result = await bootstrap.bootstrap(
+        await bootstrap.bootstrap(
             project_id=project_id,
             snapshot_id=snapshot_id,
             user_message="创建 Todo 应用",
@@ -178,7 +177,7 @@ class TestColdStartBootstrap:
             ]
 
             bootstrap = ColdStartBootstrap(runner=mock_runner)
-            result = await bootstrap.bootstrap(
+            await bootstrap.bootstrap(
                 project_id=project_id,
                 snapshot_id=snapshot_id,
                 user_message="创建 Todo 应用",

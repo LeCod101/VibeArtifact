@@ -16,22 +16,21 @@ M7 ChatOrchestrator 集成测试。
 - 空执行计划处理
 """
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
+import pytest
+from agents.analysis.cold_start import ColdStartResult
+from agents.analysis.models import ChangeScope, ImpactReport
+from agents.executors.runner import AgentRunResult
+from agents.schemas.base import AgentOutput, AgentRunMeta
 from api_app.application.services.chat_orchestrator import (
     ChatOrchestrator,
     ChatOrchestratorResult,
 )
-from agents.analysis.models import ChangeScope, ChangeSummary, ImpactReport
-from agents.analysis.cold_start import ColdStartResult
-from agents.executors.runner import AgentRunResult
-from agents.schemas.base import AgentOutput, AgentRunMeta
 from ir_core.operations.apply import ApplyError
-from ir_core.schema.data import IRNodeData, IREdgeData
+from ir_core.schema.data import IRNodeData
 from ir_core.validators.result import ValidationResult
-
 
 # ============================================================
 # 测试辅助函数

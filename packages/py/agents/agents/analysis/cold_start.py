@@ -12,10 +12,9 @@ from __future__ import annotations
 import logging
 from uuid import UUID
 
-from pydantic import BaseModel
-
 from ir_core.operations.apply import ApplyError, apply_operations
 from ir_core.schema.data import IREdgeData, IRNodeData
+from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 

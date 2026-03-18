@@ -14,7 +14,7 @@
 from agents.analysis.agent_selector import AgentSelector
 from agents.analysis.cold_start import ColdStartBootstrap, ColdStartResult
 from agents.analysis.impact_analyzer import ImpactAnalyzer
-from agents.analysis.models import ChangeSummary, ChangeScope, ImpactReport
+from agents.analysis.models import ChangeScope, ChangeSummary, ImpactReport
 
 __all__ = [
     "ImpactAnalyzer",

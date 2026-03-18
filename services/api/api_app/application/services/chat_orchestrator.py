@@ -21,11 +21,6 @@ import logging
 import time
 from uuid import UUID
 
-from pydantic import BaseModel
-
-from ir_core.operations.apply import ApplyError, apply_operations
-from ir_core.schema.data import IREdgeData, IRNodeData
-
 from agents.analysis import (
     AgentSelector,
     ChangeSummary,
@@ -34,6 +29,9 @@ from agents.analysis import (
     ImpactReport,
 )
 from agents.schemas.base import AgentInput
+from ir_core.operations.apply import ApplyError, apply_operations
+from ir_core.schema.data import IREdgeData, IRNodeData
+from pydantic import BaseModel
 
 from api_app.api.sse.chat_publisher import (
     publish_chat_agent_done,

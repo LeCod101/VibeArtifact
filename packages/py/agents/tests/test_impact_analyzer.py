@@ -14,13 +14,11 @@ M7 ImpactAnalyzer 单元测试。
 - COSMETIC scope 边界条件
 """
 
-import pytest
 from uuid import uuid4
 
-from agents.analysis.models import ChangeScope, ImpactReport
-from agents.analysis.impact_analyzer import ImpactAnalyzer, _AGENT_NODE_TYPES
-from ir_core.schema.data import IRNodeData, IREdgeData
-
+from agents.analysis.impact_analyzer import _AGENT_NODE_TYPES, ImpactAnalyzer
+from agents.analysis.models import ChangeScope
+from ir_core.schema.data import IREdgeData, IRNodeData
 
 # ============================================================
 # 测试辅助函数

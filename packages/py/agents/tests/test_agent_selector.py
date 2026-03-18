@@ -12,11 +12,9 @@ M7 AgentSelector 单元测试。
 - 空 agents 列表返回空计划
 """
 
-import pytest
 
 from agents.analysis.agent_selector import AgentSelector
 from agents.analysis.models import ChangeScope, ImpactReport
-
 
 # ============================================================
 # 测试辅助函数
