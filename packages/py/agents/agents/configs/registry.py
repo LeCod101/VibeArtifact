@@ -45,13 +45,13 @@ class AgentRegistry:
 
     def register(self, config: AgentConfig) -> None:
         """
-        注册一个 Agent。
+        注册一个 Agent（幂等）。
 
-        将 AgentConfig 加入注册表。如果 agent_id 已存在则抛出异常。
+        将 AgentConfig 加入注册表。如果 agent_id 已存在则跳过，保证重复调用安全。
         - config: 要注册的 Agent 配置
         """
         if config.agent_id in self._agents:
-            raise ValueError(f"Agent '{config.agent_id}' 已注册")
+            return
         self._agents[config.agent_id] = config
 
     def get(self, agent_id: str) -> AgentConfig:

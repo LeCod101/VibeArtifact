@@ -14,7 +14,7 @@
  */
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useAuthStore } from "@/stores/auth-store";
 import type { ChatSSEEvent } from "@/lib/api-client/types";
 
@@ -171,8 +171,10 @@ export function useChatSSE(conversationId: string | null): ChatSSEReturn {
     };
   }, [conversationId, handleEvent]);
 
-  // 保持 connectRef 与最新的 connect 同步
-  connectRef.current = connect;
+  // 保持 connectRef 与最新的 connect 同步（必须在 useEffect 中赋值 ref）
+  useEffect(() => {
+    connectRef.current = connect;
+  }, [connect]);
 
   /**
    * 开始监听 SSE 事件

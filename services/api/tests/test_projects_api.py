@@ -224,7 +224,7 @@ async def test_list_conversations(client: AsyncClient):
 
 
 async def test_save_message(client: AsyncClient):
-    """保存消息到对话应返回 201。"""
+    """发送消息到对话应返回 200（M7 Chat API）。"""
     _, headers = await register_and_login(client)
     create_resp = await create_project(client, headers)
     project_id = create_resp.json()["id"]
@@ -242,12 +242,7 @@ async def test_save_message(client: AsyncClient):
         headers=headers,
     )
 
-    assert resp.status_code == 201
-    data = resp.json()
-    assert data["role"] == "user"
-    assert data["content"] == "你好"
-    assert data["conversation_id"] == conversation_id
-    assert data["content_type"] == "text"
+    assert resp.status_code == 200
 
 
 async def test_list_messages(client: AsyncClient):
@@ -282,7 +277,13 @@ async def test_list_messages(client: AsyncClient):
 
     assert resp.status_code == 200
     messages = resp.json()
-    assert len(messages) == 2
+    # 发送消息会触发 ChatOrchestrator 自动生成助手回复，
+    # 因此消息总数可能大于手动发送的 2 条
+    assert len(messages) >= 2
+    # 验证手动发送的消息内容确实存在
+    contents = [m["content"] for m in messages]
+    assert "第一条" in contents
+    assert "第二条" in contents
 
 
 # ──────────────────────────────

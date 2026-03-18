@@ -126,9 +126,14 @@ export function useSSE(
     };
   }, [runId, projectId]);
 
+  // 保持 connectRef 与最新的 connect 同步
   useEffect(() => {
-    // 保持 connectRef 与最新的 connect 同步
     connectRef.current = connect;
+  }, [connect]);
+
+  // 当 runId / projectId 变化时重置状态并重新连接
+  useEffect(() => {
+    if (!runId || !projectId) return;
 
     // 重置状态
     setEvents([]);
@@ -140,14 +145,15 @@ export function useSSE(
 
     connect();
 
-    // 清理：组件卸载时关闭 EventSource
+    // 清理：组件卸载或依赖变化时关闭 EventSource
     return () => {
       if (eventSourceRef.current) {
         eventSourceRef.current.close();
         eventSourceRef.current = null;
       }
     };
-  }, [connect]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [runId, projectId]);
 
   return { events, isConnected, error, lastEvent };
 }
