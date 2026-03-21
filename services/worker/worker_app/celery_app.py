@@ -9,6 +9,12 @@ celery_app = Celery(
     "vibeartifact",
     broker=broker_url,
     backend=result_backend,
+    # 显式列出任务模块，确保 worker 启动时加载所有任务
+    include=[
+        "worker_app.tasks.ping",
+        "worker_app.tasks.agent_task",
+        "worker_app.tasks.orchestrate",
+    ],
 )
 
 celery_app.conf.update(
@@ -18,5 +24,3 @@ celery_app.conf.update(
     timezone="UTC",
     enable_utc=True,
 )
-
-celery_app.autodiscover_tasks(["worker_app.tasks"])
