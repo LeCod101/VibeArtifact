@@ -333,7 +333,13 @@ class TestAgentRunnerCalled:
                 "node_id": str(uuid4()),
                 "node_type": "entity",
                 "label": "Todo",
-                "props": {"name": "Todo"},
+                "props": {
+                    "name": "Todo",
+                    "fields": [
+                        {"name": "id", "type": "uuid", "required": True},
+                        {"name": "title", "type": "string", "required": True},
+                    ],
+                },
             }
         ]
         mock_result.warnings = []
