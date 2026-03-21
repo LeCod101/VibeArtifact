@@ -19,6 +19,14 @@ export type {
   SSEEventData,
 } from "./api";
 
+/* ============ 审批 API 层 ============ */
+export {
+  useApprovalItems,
+  useApproveRun,
+  useRejectRun,
+  useAdjustRun,
+} from "./api-approvals";
+
 /* ============ Hooks ============ */
 export { useSSE } from "./hooks/use-sse";
 export {
@@ -31,3 +39,7 @@ export {
 export { DelegatedTrigger } from "./components/delegated-trigger";
 export { DagProgress } from "./components/dag-progress";
 export { DownloadPanel } from "./components/download-panel";
+export { RiskPanel } from "./components/risk-panel";
+export { DecisionPanel } from "./components/decision-panel";
+export { ApprovalBanner } from "./components/approval-banner";
+export { ApprovalDialog } from "./components/approval-dialog";

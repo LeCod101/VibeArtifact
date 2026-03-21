@@ -7,6 +7,7 @@ from platform_data.repositories.lease_repo import LeaseRepository
 from platform_data.repositories.message_repo import MessageRepository
 from platform_data.repositories.project_repo import ProjectRepository
 from platform_data.repositories.snapshot_repo import SnapshotRepository
+from platform_data.repositories.template_repo import TemplateRepository
 from platform_data.repositories.user_repo import UserRepository
 
 __all__ = [
@@ -17,5 +18,6 @@ __all__ = [
     "MessageRepository",
     "ProjectRepository",
     "SnapshotRepository",
+    "TemplateRepository",
     "UserRepository",
 ]

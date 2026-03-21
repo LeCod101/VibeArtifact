@@ -221,3 +221,67 @@ export interface RollbackResponse {
   new_branch_id: string | null;
   snapshot_id: string;
 }
+
+/* ============ 审批相关 ============ */
+
+/** 风险条目 */
+export interface RiskItem {
+  id: string;
+  title: string;
+  description: string;
+  severity: string;
+  status: string;
+  mitigation: string | null;
+}
+
+/** 待决策条目 */
+export interface DecisionItem {
+  id: string;
+  title: string;
+  description: string;
+  status: string;
+  alternatives: string[] | null;
+}
+
+/** 审批历史条目 */
+export interface ApprovalHistoryItem {
+  id: string;
+  action: string;
+  reason: string | null;
+  created_at: string;
+}
+
+/** 审批项响应 — 包含风险、决策和审批历史 */
+export interface ApprovalItemsResponse {
+  run_id: string;
+  status: string;
+  high_risks: RiskItem[];
+  pending_decisions: DecisionItem[];
+  requires_approval: boolean;
+  approval_history: ApprovalHistoryItem[];
+}
+
+/** 审批操作响应 */
+export interface ApprovalActionResponse {
+  success: boolean;
+  action: string;
+  run_id: string;
+  new_status: string;
+  message: string;
+}
+
+/** 批准请求 */
+export interface ApproveRequest {
+  reason?: string;
+}
+
+/** 拒绝请求 */
+export interface RejectRequest {
+  reason?: string;
+}
+
+/** 调整请求 */
+export interface AdjustRequest {
+  feedback: string;
+  reason?: string;
+}

@@ -5,11 +5,13 @@
  *
  * 页面组合：
  * - 运行中：DAG 进度面板（SSE 实时 + polling 兜底）
+ * - 等待审批：审批横幅 + 风险面板 + 决策面板
  * - 完成后：DAG 进度面板 + 下载面板
  * - 失败时：DAG 进度面板 + 错误信息
  */
 "use client";
 
+import { useState } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -19,6 +21,19 @@ import { useSSE } from "@/features/delegation/hooks/use-sse";
 import { useDelegatedRun } from "@/features/delegation/hooks/use-delegated";
 import { DagProgress } from "@/features/delegation/components/dag-progress";
 import { DownloadPanel } from "@/features/delegation/components/download-panel";
+import { ApprovalBanner } from "@/features/delegation/components/approval-banner";
+import { RiskPanel } from "@/features/delegation/components/risk-panel";
+import { DecisionPanel } from "@/features/delegation/components/decision-panel";
+import { ApprovalDialog } from "@/features/delegation/components/approval-dialog";
+import {
+  useApprovalItems,
+  useApproveRun,
+  useRejectRun,
+  useAdjustRun,
+} from "@/features/delegation/api-approvals";
+
+/** 审批对话框的操作类型 */
+type DialogAction = "approve" | "reject" | "adjust";
 
 /**
  * 运行状态中文标签
@@ -35,6 +50,8 @@ function runStatusLabel(status: string | undefined): string {
       return "执行失败";
     case "needs_attention":
       return "需要介入";
+    case "waiting_approval":
+      return "等待审批";
     default:
       return "加载中";
   }
@@ -53,6 +70,7 @@ function runStatusStyle(status: string | undefined): string {
     case "failed":
       return "text-red-600 bg-red-50";
     case "needs_attention":
+    case "waiting_approval":
       return "text-amber-600 bg-amber-50";
     default:
       return "text-muted-foreground bg-muted";
@@ -66,6 +84,10 @@ export default function DelegatedResultPage() {
 
   const projectId = params.id as string;
   const runId = searchParams.get("runId");
+
+  // 审批对话框状态
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogAction, setDialogAction] = useState<DialogAction>("approve");
 
   // 查询项目信息（用于面包屑/标题）
   const { data: project, isLoading: projectLoading } =
@@ -82,6 +104,60 @@ export default function DelegatedResultPage() {
     projectId,
     runId,
   );
+
+  // 审批数据（仅在 waiting_approval 状态时有效）
+  const isWaitingApproval = runData?.status === "waiting_approval";
+  const { data: approvalData } = useApprovalItems(
+    projectId,
+    isWaitingApproval ? (runId ?? undefined) : undefined,
+  );
+
+  // 审批操作 mutations
+  const approveMutation = useApproveRun(projectId);
+  const rejectMutation = useRejectRun(projectId);
+  const adjustMutation = useAdjustRun(projectId);
+
+  // 是否有审批操作正在进行
+  const isApprovalLoading =
+    approveMutation.isPending ||
+    rejectMutation.isPending ||
+    adjustMutation.isPending;
+
+  /**
+   * 打开审批对话框
+   */
+  function openDialog(action: DialogAction) {
+    setDialogAction(action);
+    setDialogOpen(true);
+  }
+
+  /**
+   * 处理审批确认
+   */
+  function handleConfirm(reason?: string, feedback?: string) {
+    if (!runId) return;
+
+    switch (dialogAction) {
+      case "approve":
+        approveMutation.mutate(
+          { runId, reason },
+          { onSuccess: () => setDialogOpen(false) },
+        );
+        break;
+      case "reject":
+        rejectMutation.mutate(
+          { runId, reason },
+          { onSuccess: () => setDialogOpen(false) },
+        );
+        break;
+      case "adjust":
+        adjustMutation.mutate(
+          { runId, feedback: feedback ?? "", reason },
+          { onSuccess: () => setDialogOpen(false) },
+        );
+        break;
+    }
+  }
 
   // 缺少 runId 参数
   if (!runId) {
@@ -149,6 +225,19 @@ export default function DelegatedResultPage() {
         </div>
       )}
 
+      {/* 审批横幅（等待审批时显示） */}
+      {isWaitingApproval && approvalData && (
+        <ApprovalBanner
+          requiresApproval={approvalData.requires_approval}
+          riskCount={approvalData.high_risks.length}
+          decisionCount={approvalData.pending_decisions.length}
+          onApprove={() => openDialog("approve")}
+          onReject={() => openDialog("reject")}
+          onAdjust={() => openDialog("adjust")}
+          isLoading={isApprovalLoading}
+        />
+      )}
+
       {/* DAG 进度面板 */}
       <DagProgress
         runData={runData}
@@ -159,6 +248,14 @@ export default function DelegatedResultPage() {
             : null
         }
       />
+
+      {/* 风险和决策面板（等待审批时显示） */}
+      {isWaitingApproval && approvalData && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <RiskPanel risks={approvalData.high_risks} />
+          <DecisionPanel decisions={approvalData.pending_decisions} />
+        </div>
+      )}
 
       {/* 运行失败提示 */}
       {runData?.status === "failed" && runData.error_message && (
@@ -174,6 +271,15 @@ export default function DelegatedResultPage() {
         projectId={projectId}
         runId={runId}
         runData={runData}
+      />
+
+      {/* 审批确认对话框 */}
+      <ApprovalDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        action={dialogAction}
+        onConfirm={handleConfirm}
+        isLoading={isApprovalLoading}
       />
     </div>
   );

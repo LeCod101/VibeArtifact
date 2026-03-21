@@ -26,6 +26,10 @@ class RunStatus(enum.Enum):
     running = "running"
     completed = "completed"
     failed = "failed"
+    # Gate 检查失败，需要人工介入
+    needs_attention = "needs_attention"
+    # 委托运行中需要用户审批
+    waiting_approval = "waiting_approval"
 
 
 # 共享枚举实例，job_runs 和 agent_runs 复用同一个 PostgreSQL ENUM 类型

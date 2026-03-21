@@ -503,6 +503,68 @@ const translations = {
     },
   },
 
+  /* ============ 审批相关 ============ */
+  approval: {
+    title: { zh: "审批", en: "Approval" },
+    requiresApproval: {
+      zh: "此运行需要您的审批",
+      en: "This run requires your approval",
+    },
+    riskCount: {
+      zh: "{count} 个高风险项",
+      en: "{count} high risk item(s)",
+    },
+    decisionCount: {
+      zh: "{count} 个待决策项",
+      en: "{count} pending decision(s)",
+    },
+    approve: { zh: "批准并继续", en: "Approve & Continue" },
+    reject: { zh: "拒绝", en: "Reject" },
+    adjust: { zh: "要求调整", en: "Request Adjustment" },
+    approveConfirm: {
+      zh: "确定批准此运行？所有风险和决策将被标记为已接受。",
+      en: "Approve this run? All risks and decisions will be marked as accepted.",
+    },
+    rejectConfirm: {
+      zh: "确定拒绝此运行？请填写拒绝理由。",
+      en: "Reject this run? Please provide a reason.",
+    },
+    adjustPrompt: {
+      zh: "请描述需要调整的内容：",
+      en: "Describe what needs to be adjusted:",
+    },
+    reason: { zh: "理由（可选）", en: "Reason (optional)" },
+    feedback: { zh: "调整反馈", en: "Adjustment Feedback" },
+    approved: { zh: "已批准", en: "Approved" },
+    rejected: { zh: "已拒绝", en: "Rejected" },
+    adjusted: { zh: "已要求调整", en: "Adjustment Requested" },
+    noRisks: { zh: "暂无高风险项", en: "No high-risk items" },
+    noDecisions: { zh: "暂无待决策项", en: "No pending decisions" },
+    riskTitle: { zh: "高风险项", en: "High Risks" },
+    decisionTitle: { zh: "待决策项", en: "Pending Decisions" },
+    mitigation: { zh: "缓解措施：", en: "Mitigation: " },
+    alternatives: { zh: "备选方案：", en: "Alternatives:" },
+    history: { zh: "审批历史", en: "Approval History" },
+  },
+
+  /* ============ 模板相关 ============ */
+  templates: {
+    title: { zh: "项目模板", en: "Project Templates" },
+    subtitle: { zh: "选择一个模板快速开始", en: "Choose a template to get started quickly" },
+    create: { zh: "从模板创建", en: "Create from Template" },
+    projectName: { zh: "项目名称", en: "Project Name" },
+    confirm: { zh: "创建项目", en: "Create Project" },
+    success: { zh: "项目创建成功", en: "Project created successfully" },
+    empty: { zh: "暂无可用模板", en: "No templates available" },
+    categories: {
+      saas: { zh: "SaaS 应用", en: "SaaS App" },
+      api: { zh: "API 服务", en: "API Service" },
+      landing: { zh: "落地页", en: "Landing Page" },
+      dashboard: { zh: "管理后台", en: "Dashboard" },
+      other: { zh: "其他", en: "Other" },
+    },
+  },
+
   /* ============ 产物页 ============ */
   artifacts: {
     title: { zh: "项目产物", en: "Artifacts" },

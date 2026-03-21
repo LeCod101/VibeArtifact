@@ -1,5 +1,8 @@
 """Platform data models package."""
 
+# Approval
+from platform_data.models.approval import ApprovalAction, ApprovalRecord
+
 # Artifact
 from platform_data.models.artifact import Artifact, ArtifactStatus, ArtifactVersion
 from platform_data.models.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
@@ -33,6 +36,9 @@ from platform_data.models.ir import (
     SnapshotStatus,
 )
 from platform_data.models.project import ModelTier, Project, ProjectConfig, ProjectStatus
+
+# Template
+from platform_data.models.template import ProjectTemplate, TemplateCategory
 
 # User & Project
 from platform_data.models.user import User, UserStatus
@@ -72,4 +78,10 @@ __all__ = [
     "CostLedger",
     "AuditEvent",
     "RunStatus",
+    # Approval
+    "ApprovalRecord",
+    "ApprovalAction",
+    # Template
+    "ProjectTemplate",
+    "TemplateCategory",
 ]

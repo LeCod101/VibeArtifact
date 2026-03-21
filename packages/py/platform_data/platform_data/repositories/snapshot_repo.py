@@ -93,3 +93,89 @@ class SnapshotRepository(BaseRepository[IRSnapshot]):
         edges = list(edge_result.scalars().all())
 
         return nodes, edges
+
+    async def get_pending_decisions(self, snapshot_id: UUID) -> list[IRNode]:
+        """获取快照中状态为 pending 的决策节点。
+
+        查询条件：node_type='decision' AND props->>'status'='pending'
+        为兼容 SQLite 测试环境，使用 Python 端过滤 props 字段。
+
+        参数:
+            snapshot_id: 快照 UUID
+
+        返回:
+            状态为 pending 的决策节点列表
+        """
+        stmt = select(IRNode).where(
+            IRNode.snapshot_id == snapshot_id,
+            IRNode.node_type == "decision",
+        )
+        result = await self.session.execute(stmt)
+        nodes = list(result.scalars().all())
+        # Python 端过滤 props 中 status 为 pending 的节点（兼容 SQLite）
+        return [
+            n for n in nodes
+            if n.props and n.props.get("status") == "pending"
+        ]
+
+    async def get_high_risks(self, snapshot_id: UUID) -> list[IRNode]:
+        """获取快照中高严重等级且状态为 open 的风险节点。
+
+        查询条件：node_type='risk' AND props->>'severity'='high' AND props->>'status'='open'
+        为兼容 SQLite 测试环境，使用 Python 端过滤 props 字段。
+
+        参数:
+            snapshot_id: 快照 UUID
+
+        返回:
+            高严重度且状态为 open 的风险节点列表
+        """
+        stmt = select(IRNode).where(
+            IRNode.snapshot_id == snapshot_id,
+            IRNode.node_type == "risk",
+        )
+        result = await self.session.execute(stmt)
+        nodes = list(result.scalars().all())
+        # Python 端过滤 severity=high 且 status=open 的节点（兼容 SQLite）
+        return [
+            n for n in nodes
+            if n.props
+            and n.props.get("severity") == "high"
+            and n.props.get("status") == "open"
+        ]
+
+    async def get_approval_items(self, snapshot_id: UUID) -> dict:
+        """获取快照中需要审批的项目汇总。
+
+        汇总 pending 决策和高风险项，判断是否需要审批。
+        当存在任一 pending 决策或高风险项时 requires_approval 为 True。
+
+        参数:
+            snapshot_id: 快照 UUID
+
+        返回:
+            汇总字典，格式:
+            {
+                "high_risks": [节点 props 列表],
+                "pending_decisions": [节点 props 列表],
+                "requires_approval": bool
+            }
+        """
+        pending_decisions = await self.get_pending_decisions(snapshot_id)
+        high_risks = await self.get_high_risks(snapshot_id)
+
+        # 提取 props 摘要
+        decision_items = [
+            {"id": str(n.id), "label": n.label, **(n.props or {})}
+            for n in pending_decisions
+        ]
+        risk_items = [
+            {"id": str(n.id), "label": n.label, **(n.props or {})}
+            for n in high_risks
+        ]
+
+        return {
+            "high_risks": risk_items,
+            "pending_decisions": decision_items,
+            "requires_approval": len(decision_items) > 0 or len(risk_items) > 0,
+        }

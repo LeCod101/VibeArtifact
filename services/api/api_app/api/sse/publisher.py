@@ -199,6 +199,54 @@ async def publish_run_failed(
     )
 
 
+async def publish_approval_required(
+    run_id: str,
+    approval_items: dict,
+) -> None:
+    """
+    发布审批请求事件。
+
+    委托运行进入 waiting_approval 状态时发布此事件，
+    前端收到后展示审批面板，包含风险项和待决策项。
+
+    - run_id: 运行 ID
+    - approval_items: 审批项汇总字典，包含 high_risks / pending_decisions 等
+    """
+    await publish_step_event(
+        run_id=run_id,
+        event_type="approval_required",
+        data={
+            "run_id": run_id,
+            "approval_items": approval_items,
+            "message": "运行需要审批，请查看风险项和待决策项",
+        },
+    )
+
+
+async def publish_approval_complete(
+    run_id: str,
+    action: str,
+) -> None:
+    """
+    发布审批完成事件。
+
+    用户完成审批操作（approve / reject / adjust）后发布此事件，
+    前端收到后更新运行状态和面板显示。
+
+    - run_id: 运行 ID
+    - action: 审批动作（approve / reject / adjust）
+    """
+    await publish_step_event(
+        run_id=run_id,
+        event_type="approval_complete",
+        data={
+            "run_id": run_id,
+            "action": action,
+            "message": f"审批操作完成: {action}",
+        },
+    )
+
+
 async def publish_needs_attention(
     run_id: str,
     gate_result: dict,
