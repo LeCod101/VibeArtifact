@@ -9,12 +9,17 @@
 - ChangeScope: 变更范围枚举
 - ColdStartBootstrap: 项目 IR 为空时执行最小 Agent 链路
 - ColdStartResult: 冷启动执行结果
+- SummaryGenerator: 长对话自动压缩为摘要
+- DecisionExtractor: 从对话中抽取关键决策写回 IR
+- DecisionRecord: 决策记录数据结构
 """
 
 from agents.analysis.agent_selector import AgentSelector
 from agents.analysis.cold_start import ColdStartBootstrap, ColdStartResult
+from agents.analysis.decision_extractor import DecisionExtractor, DecisionRecord
 from agents.analysis.impact_analyzer import ImpactAnalyzer
 from agents.analysis.models import ChangeScope, ChangeSummary, ImpactReport
+from agents.analysis.summary_generator import SummaryGenerator
 
 __all__ = [
     "ImpactAnalyzer",
@@ -24,4 +29,7 @@ __all__ = [
     "ChangeScope",
     "ColdStartBootstrap",
     "ColdStartResult",
+    "SummaryGenerator",
+    "DecisionExtractor",
+    "DecisionRecord",
 ]

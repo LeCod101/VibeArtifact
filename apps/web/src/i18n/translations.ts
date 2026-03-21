@@ -476,6 +476,33 @@ const translations = {
     statusNeedsAttention: { zh: "需要关注", en: "Needs Attention" },
   },
 
+  /* ============ 分支相关 ============ */
+  branches: {
+    title: { zh: "分支", en: "Branches" },
+    selector: { zh: "切换分支", en: "Switch Branch" },
+    create: { zh: "新建分支", en: "New Branch" },
+    fork: { zh: "Fork 分支", en: "Fork Branch" },
+    rollback: { zh: "回滚", en: "Rollback" },
+    rollbackConfirm: {
+      zh: "确定要回滚到此快照吗？这将创建一个新分支。",
+      en: "Are you sure you want to rollback to this snapshot? This will create a new branch.",
+    },
+    rollbackSuccess: { zh: "回滚成功", en: "Rollback successful" },
+    noChange: { zh: "当前已在此快照", en: "Already at this snapshot" },
+    forked: { zh: "已创建新分支", en: "New branch created" },
+    switched: {
+      zh: "已切换到包含此快照的分支",
+      en: "Switched to the branch containing this snapshot",
+    },
+    mainBranch: { zh: "主分支", en: "Main Branch" },
+    messageCount: { zh: "{count} 条消息", en: "{count} messages" },
+    snapshotUpdated: { zh: "快照已更新", en: "Snapshot updated" },
+    rollbackToSnapshot: {
+      zh: "回滚到此快照",
+      en: "Rollback to this snapshot",
+    },
+  },
+
   /* ============ 产物页 ============ */
   artifacts: {
     title: { zh: "项目产物", en: "Artifacts" },

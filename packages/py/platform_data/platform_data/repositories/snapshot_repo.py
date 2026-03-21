@@ -4,7 +4,7 @@ from uuid import UUID
 
 from sqlalchemy import select
 
-from platform_data.models.ir import IRSnapshot, SnapshotStatus
+from platform_data.models.ir import IREdge, IRNode, IRSnapshot, SnapshotStatus
 from platform_data.repositories.base import BaseRepository
 
 
@@ -66,3 +66,30 @@ class SnapshotRepository(BaseRepository[IRSnapshot]):
             status=SnapshotStatus.active,
         )
         return await self.create(snapshot)
+
+    async def load_snapshot_graph(
+        self, snapshot_id: UUID
+    ) -> tuple[list[IRNode], list[IREdge]]:
+        """加载指定快照的所有节点和边。
+
+        参数:
+            snapshot_id: 快照 UUID
+
+        返回:
+            (nodes, edges) 元组，分别为 IRNode 和 IREdge ORM 对象列表
+        """
+        # 查询该快照下的所有节点
+        node_stmt = select(IRNode).where(
+            IRNode.snapshot_id == snapshot_id
+        )
+        node_result = await self.session.execute(node_stmt)
+        nodes = list(node_result.scalars().all())
+
+        # 查询该快照下的所有边
+        edge_stmt = select(IREdge).where(
+            IREdge.snapshot_id == snapshot_id
+        )
+        edge_result = await self.session.execute(edge_stmt)
+        edges = list(edge_result.scalars().all())
+
+        return nodes, edges

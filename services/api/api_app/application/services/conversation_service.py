@@ -5,6 +5,7 @@
 
 from uuid import UUID
 
+from ir_core.schema.data import IREdgeData, IRNodeData
 from platform_data.models.conversation import (
     Conversation,
     ConversationBranch,
@@ -12,6 +13,7 @@ from platform_data.models.conversation import (
 )
 from platform_data.repositories.branch_repo import BranchRepository
 from platform_data.repositories.conversation_repo import ConversationRepository
+from platform_data.repositories.snapshot_repo import SnapshotRepository
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
@@ -31,6 +33,7 @@ class ConversationService:
         self.session = session
         self.conversation_repo = ConversationRepository(session)
         self.branch_repo = BranchRepository(session)
+        self.snapshot_repo = SnapshotRepository(session)
 
     async def create_conversation(
         self,
@@ -123,3 +126,57 @@ class ConversationService:
         if branch is not None:
             branch.head_snapshot_id = new_snapshot_id
             await self.session.flush()
+
+    async def get_current_snapshot(
+        self, branch_id: UUID
+    ) -> tuple[UUID | None, list[IRNodeData], list[IREdgeData]]:
+        """获取分支当前快照 ID 及其 IR 节点/边。
+
+        流程：
+        1. 获取 branch.head_snapshot_id
+        2. 如果有，用 SnapshotRepository.load_snapshot_graph() 加载节点和边
+        3. 将 ORM 对象转为 ir_core 的 IRNodeData/IREdgeData 格式
+
+        参数:
+            branch_id: 分支 UUID
+
+        返回:
+            (snapshot_id, ir_nodes_data, ir_edges_data)
+            如果分支没有 head_snapshot_id，返回 (None, [], [])
+        """
+        branch = await self.branch_repo.get_by_id(branch_id)
+        if branch is None or branch.head_snapshot_id is None:
+            return None, [], []
+
+        snapshot_id = branch.head_snapshot_id
+
+        # 从数据库加载快照图的 ORM 对象
+        orm_nodes, orm_edges = await self.snapshot_repo.load_snapshot_graph(
+            snapshot_id
+        )
+
+        # 将 ORM 对象转换为 DTO
+        ir_nodes = [
+            IRNodeData(
+                id=node.id,
+                node_type=node.node_type,
+                label=node.label,
+                props=node.props or {},
+                position_x=node.position_x,
+                position_y=node.position_y,
+            )
+            for node in orm_nodes
+        ]
+
+        ir_edges = [
+            IREdgeData(
+                id=edge.id,
+                source_node_id=edge.source_node_id,
+                target_node_id=edge.target_node_id,
+                edge_type=edge.edge_type,
+                props=edge.props,
+            )
+            for edge in orm_edges
+        ]
+
+        return snapshot_id, ir_nodes, ir_edges

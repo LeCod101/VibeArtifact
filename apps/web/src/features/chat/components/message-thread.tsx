@@ -7,17 +7,20 @@
  * - system: 居中，透明背景
  *
  * 自动滚动到底部。
+ * 支持快照指示器显示和回滚操作。
  */
 "use client";
 
-import { useEffect, useRef } from "react";
-import { Loader2, User, Bot, Info } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Loader2, User, Bot, Info, RotateCcw } from "lucide-react";
 import { useLocale } from "@/i18n/context";
 import t from "@/i18n/translations";
 import type { Locale } from "@/i18n/translations";
 import type { MessageResponse } from "@/lib/api-client/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ChangeSummary } from "@/features/chat/components/change-summary";
+import { SnapshotIndicator } from "@/features/chat/components/snapshot-indicator";
+import { RollbackDialog } from "@/features/chat/components/rollback-dialog";
 
 /** 多语言取值辅助函数 */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -28,6 +31,10 @@ function L(obj: { zh: any; en: any }, locale: Locale) {
 interface MessageThreadProps {
   messages: MessageResponse[] | undefined;
   isLoading: boolean;
+  /** 对话 ID，用于回滚操作 */
+  conversationId?: string;
+  /** 回滚完成后的回调 */
+  onRollbackComplete?: () => void;
 }
 
 /** 格式化消息时间 */
@@ -36,9 +43,17 @@ function formatTime(iso: string) {
   return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
-export function MessageThread({ messages, isLoading }: MessageThreadProps) {
+export function MessageThread({
+  messages,
+  isLoading,
+  conversationId,
+  onRollbackComplete,
+}: MessageThreadProps) {
   const { locale } = useLocale();
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  // 回滚对话框状态
+  const [rollbackTarget, setRollbackTarget] = useState<string | null>(null);
 
   // 新消息到达时自动滚动到底部
   useEffect(() => {
@@ -62,20 +77,53 @@ export function MessageThread({ messages, isLoading }: MessageThreadProps) {
   }
 
   return (
-    <ScrollArea className="flex-1 px-4">
-      <div className="space-y-4 py-4">
-        {messages.map((msg) => (
-          <MessageBubble key={msg.id} message={msg} />
-        ))}
-        {/* 滚动锚点 */}
-        <div ref={bottomRef} />
-      </div>
-    </ScrollArea>
+    <>
+      <ScrollArea className="flex-1 px-4">
+        <div className="space-y-4 py-4">
+          {messages.map((msg) => (
+            <MessageBubble
+              key={msg.id}
+              message={msg}
+              onRollback={
+                conversationId && msg.snapshot_after_id
+                  ? () => setRollbackTarget(msg.snapshot_after_id!)
+                  : undefined
+              }
+            />
+          ))}
+          {/* 滚动锚点 */}
+          <div ref={bottomRef} />
+        </div>
+      </ScrollArea>
+
+      {/* 回滚确认对话框 */}
+      {conversationId && rollbackTarget && (
+        <RollbackDialog
+          open={!!rollbackTarget}
+          onOpenChange={(open) => {
+            if (!open) setRollbackTarget(null);
+          }}
+          conversationId={conversationId}
+          snapshotId={rollbackTarget}
+          onRollbackComplete={() => {
+            setRollbackTarget(null);
+            onRollbackComplete?.();
+          }}
+        />
+      )}
+    </>
   );
 }
 
 /** 单条消息气泡 */
-function MessageBubble({ message }: { message: MessageResponse }) {
+function MessageBubble({
+  message,
+  onRollback,
+}: {
+  message: MessageResponse;
+  onRollback?: () => void;
+}) {
+  const { locale } = useLocale();
   const { role, content, created_at } = message;
 
   // system 消息居中显示
@@ -121,13 +169,37 @@ function MessageBubble({ message }: { message: MessageResponse }) {
           >
             {content}
           </div>
-          <p
-            className={`text-[10px] text-muted-foreground mt-1 ${
-              isUser ? "text-right" : "text-left"
+
+          {/* 时间 + 快照指示器 + 回滚按钮 */}
+          <div
+            className={`flex items-center gap-2 mt-1 ${
+              isUser ? "justify-end" : "justify-start"
             }`}
           >
-            {formatTime(created_at)}
-          </p>
+            <p className="text-[10px] text-muted-foreground">
+              {formatTime(created_at)}
+            </p>
+
+            {/* 快照指示器：仅 assistant 消息且有 snapshot_after_id 时显示 */}
+            {!isUser && message.snapshot_after_id && (
+              <SnapshotIndicator
+                snapshotBefore={message.snapshot_before_id}
+                snapshotAfter={message.snapshot_after_id}
+              />
+            )}
+
+            {/* 回滚按钮：仅有 snapshot_after_id 的 assistant 消息显示 */}
+            {!isUser && onRollback && (
+              <button
+                type="button"
+                onClick={onRollback}
+                className="inline-flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors px-1 py-0.5 rounded"
+                title={L(t.branches.rollbackToSnapshot, locale)}
+              >
+                <RotateCcw className="h-3 w-3" />
+              </button>
+            )}
+          </div>
 
           {/* 助手消息的变更摘要卡片 */}
           {!isUser && message.change_summary && (

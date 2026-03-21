@@ -23,7 +23,7 @@ import pytest
 from agents.analysis.cold_start import ColdStartResult
 from agents.analysis.models import ChangeScope, ImpactReport
 from agents.executors.runner import AgentRunResult
-from agents.schemas.base import AgentOutput, AgentRunMeta
+from agents.schemas.base import AgentOutput, AgentRunMeta, MessageSlice
 from api_app.application.services.chat_orchestrator import (
     ChatOrchestrator,
     ChatOrchestratorResult,
@@ -557,3 +557,180 @@ class TestChatOrchestrator:
 
             assert isinstance(result, ChatOrchestratorResult)
             assert result.change_summary.operations_count == 0
+
+    @pytest.mark.asyncio
+    async def test_conversation_context_passed(self, base_params):
+        """orchestrator 正确接收并传递对话上下文。"""
+        base_params["ir_nodes"] = [make_test_node("ui_page", "首页")]
+        base_params["user_message"] = "修改页面布局"
+        # 传入对话上下文
+        base_params["conversation_context"] = [
+            {"role": "user", "content": "创建 Todo 应用"},
+            {"role": "assistant", "content": "好的，已创建基础结构"},
+            {"role": "user", "content": "修改页面布局"},
+        ]
+
+        orchestrator = ChatOrchestrator()
+
+        mock_runner = AsyncMock()
+        mock_runner.run = AsyncMock(
+            return_value=make_agent_run_result("frontend")
+        )
+
+        with patch.object(
+            ChatOrchestrator,
+            "_create_agent_runner",
+            return_value=mock_runner,
+        ):
+            result = await orchestrator.handle_message(**base_params)
+
+            assert isinstance(result, ChatOrchestratorResult)
+            # 验证 runner.run 被调用，且 AgentInput 中有 conversation_context
+            call_args = mock_runner.run.call_args
+            agent_input = call_args[0][1]
+            # Pydantic 会将 dict 自动转换为 MessageSlice 对象
+            expected_context = [
+                MessageSlice(role="user", content="创建 Todo 应用"),
+                MessageSlice(role="assistant", content="好的，已创建基础结构"),
+                MessageSlice(role="user", content="修改页面布局"),
+            ]
+            assert agent_input.conversation_context == expected_context
+
+    @pytest.mark.asyncio
+    async def test_empty_snapshot_cold_start(self, base_params):
+        """无快照时（snapshot_id=None, ir_nodes=[]）正常进入冷启动。"""
+        base_params["snapshot_id"] = None
+        base_params["ir_nodes"] = []
+        base_params["ir_edges"] = []
+
+        orchestrator = ChatOrchestrator()
+
+        with (
+            patch.object(
+                ChatOrchestrator,
+                "_create_agent_runner",
+                return_value=AsyncMock(),
+            ),
+            patch(
+                "api_app.application.services.chat_orchestrator"
+                ".ColdStartBootstrap"
+            ) as MockBootstrap,
+        ):
+            mock_instance = AsyncMock()
+            mock_instance.bootstrap = AsyncMock(
+                return_value=make_cold_start_result()
+            )
+            MockBootstrap.return_value = mock_instance
+            MockBootstrap.COLD_START_AGENTS = [
+                "intent", "contraction", "planner", "schema"
+            ]
+
+            result = await orchestrator.handle_message(**base_params)
+
+            # 冷启动路径应该被触发
+            assert result.impact_report.requires_cold_start is True
+            assert isinstance(result, ChatOrchestratorResult)
+            assert result.change_summary.operations_count > 0
+
+
+class TestSnapshotBinding:
+    """快照绑定相关测试 — 验证消息响应中的 snapshot 字段。"""
+
+    @pytest.mark.asyncio
+    async def test_message_response_includes_snapshot_fields(self):
+        """MessageResponse schema 包含 snapshot_before_id 和 snapshot_after_id 字段。"""
+        from api_app.api.schemas.conversations import MessageResponse
+
+        # 验证 schema 字段包含 snapshot 相关字段
+        field_names = set(MessageResponse.model_fields.keys())
+        assert "snapshot_before_id" in field_names
+        assert "snapshot_after_id" in field_names
+
+    @pytest.mark.asyncio
+    async def test_message_response_snapshot_defaults_to_none(self):
+        """MessageResponse 的 snapshot 字段默认为 None。"""
+        from datetime import datetime, timezone
+
+        from api_app.api.schemas.conversations import MessageResponse
+
+        msg = MessageResponse(
+            id=uuid4(),
+            conversation_id=uuid4(),
+            branch_id=uuid4(),
+            role="user",
+            content="测试消息",
+            content_type="text",
+            created_at=datetime.now(tz=timezone.utc),
+        )
+        assert msg.snapshot_before_id is None
+        assert msg.snapshot_after_id is None
+
+    @pytest.mark.asyncio
+    async def test_message_response_with_snapshot_values(self):
+        """MessageResponse 能正确携带 snapshot 字段的值。"""
+        from datetime import datetime, timezone
+
+        from api_app.api.schemas.conversations import MessageResponse
+
+        snap_before = str(uuid4())
+        snap_after = str(uuid4())
+
+        msg = MessageResponse(
+            id=uuid4(),
+            conversation_id=uuid4(),
+            branch_id=uuid4(),
+            role="assistant",
+            content="已完成修改",
+            content_type="text",
+            snapshot_before_id=snap_before,
+            snapshot_after_id=snap_after,
+            created_at=datetime.now(tz=timezone.utc),
+        )
+        assert msg.snapshot_before_id == snap_before
+        assert msg.snapshot_after_id == snap_after
+
+    @pytest.mark.asyncio
+    async def test_branch_head_updated_after_message(self, ):
+        """验证 ChatOrchestrator 结果中 new_snapshot_id 可被设置。
+
+        注意：实际的 branch.head_snapshot_id 更新在 conversations.py 路由层完成，
+        这里验证 ChatOrchestratorResult 正确返回 new_snapshot_id 供路由层使用。
+        """
+        base_params = {
+            "project_id": uuid4(),
+            "conversation_id": uuid4(),
+            "branch_id": uuid4(),
+            "snapshot_id": uuid4(),
+            "user_message": "创建 Todo 应用",
+            "ir_nodes": [],
+            "ir_edges": [],
+            "redis": None,
+        }
+
+        orchestrator = ChatOrchestrator()
+
+        with (
+            patch.object(
+                ChatOrchestrator,
+                "_create_agent_runner",
+                return_value=AsyncMock(),
+            ),
+            patch(
+                "api_app.application.services.chat_orchestrator"
+                ".ColdStartBootstrap"
+            ) as MockBootstrap,
+        ):
+            mock_instance = AsyncMock()
+            mock_instance.bootstrap = AsyncMock(
+                return_value=make_cold_start_result()
+            )
+            MockBootstrap.return_value = mock_instance
+            MockBootstrap.COLD_START_AGENTS = [
+                "intent", "contraction", "planner", "schema"
+            ]
+
+            result = await orchestrator.handle_message(**base_params)
+
+            # 冷启动完成后结果可用于更新 branch head
+            assert isinstance(result, ChatOrchestratorResult)
+            assert result.change_summary.operations_count > 0

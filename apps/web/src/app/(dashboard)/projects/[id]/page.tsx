@@ -3,10 +3,12 @@
  *
  * 桌面端：左栏对话列表 + 右栏消息线程（双栏）
  * 移动端：对话列表与消息线程切换显示
+ *
+ * 包含分支选择器，支持切换分支和回滚操作。
  */
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { useLocale } from "@/i18n/context";
@@ -19,8 +21,10 @@ import { ConversationList } from "@/features/chat/components/conversation-list";
 import { CreateConversationDialog } from "@/features/chat/components/create-conversation-dialog";
 import { MessageThread } from "@/features/chat/components/message-thread";
 import { MessageInput } from "@/features/chat/components/message-input";
+import { BranchSelector } from "@/features/chat/components/branch-selector";
 import { Button } from "@/components/ui/button";
 import { ProjectTabs } from "@/features/project/components/project-tabs";
+import { useQueryClient } from "@tanstack/react-query";
 
 /** 多语言取值辅助函数 */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -33,6 +37,7 @@ export default function ProjectDetailPage() {
   const router = useRouter();
   const { locale } = useLocale();
   const projectId = params.id as string;
+  const queryClient = useQueryClient();
 
   // 选中的对话 ID
   const [selectedConvId, setSelectedConvId] = useState<string | null>(null);
@@ -43,6 +48,43 @@ export default function ProjectDetailPage() {
   const { data: project, isLoading: projectLoading } = useProjectQuery(projectId);
   const { data: conversations, isLoading: convsLoading } = useConversationsQuery(projectId);
   const { data: messages, isLoading: msgsLoading } = useMessagesQuery(selectedConvId);
+
+  // 获取当前选中对话的活跃分支 ID
+  const selectedConversation = conversations?.find((c) => c.id === selectedConvId);
+  const activeBranchId = selectedConversation?.active_branch_id ?? null;
+
+  /**
+   * 分支切换回调
+   * 切换分支后刷新消息列表
+   */
+  const handleBranchSwitch = useCallback(
+    (_branchId: string) => {
+      if (selectedConvId) {
+        queryClient.invalidateQueries({
+          queryKey: ["messages", selectedConvId],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ["conversations", projectId],
+        });
+      }
+    },
+    [selectedConvId, projectId, queryClient]
+  );
+
+  /**
+   * 回滚完成回调
+   * 刷新消息列表和对话信息
+   */
+  const handleRollbackComplete = useCallback(() => {
+    if (selectedConvId) {
+      queryClient.invalidateQueries({
+        queryKey: ["messages", selectedConvId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["conversations", projectId],
+      });
+    }
+  }, [selectedConvId, projectId, queryClient]);
 
   // 项目加载中
   if (projectLoading) {
@@ -103,18 +145,37 @@ export default function ProjectDetailPage() {
         >
           {selectedConvId ? (
             <>
-              {/* 移动端返回按钮 */}
-              <div className="lg:hidden flex items-center gap-2 p-3 border-b border-border">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setSelectedConvId(null)}
-                >
-                  <ArrowLeft size={16} className="mr-1" />
-                  {L(t.common.back, locale)}
-                </Button>
+              {/* 顶部栏：移动端返回按钮 + 分支选择器 */}
+              <div className="flex items-center gap-2 p-3 border-b border-border">
+                {/* 移动端返回按钮 */}
+                <div className="lg:hidden">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSelectedConvId(null)}
+                  >
+                    <ArrowLeft size={16} className="mr-1" />
+                    {L(t.common.back, locale)}
+                  </Button>
+                </div>
+
+                {/* 占位 flex，把分支选择器推到右侧 */}
+                <div className="flex-1" />
+
+                {/* 分支选择器 */}
+                <BranchSelector
+                  conversationId={selectedConvId}
+                  activeBranchId={activeBranchId}
+                  onBranchSwitch={handleBranchSwitch}
+                />
               </div>
-              <MessageThread messages={messages} isLoading={msgsLoading} />
+
+              <MessageThread
+                messages={messages}
+                isLoading={msgsLoading}
+                conversationId={selectedConvId}
+                onRollbackComplete={handleRollbackComplete}
+              />
               <MessageInput conversationId={selectedConvId} />
             </>
           ) : (

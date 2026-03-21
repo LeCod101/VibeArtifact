@@ -209,6 +209,31 @@ class ChatOrchestrator:
 
         参数同 handle_message，额外传入 conv_id_str 避免重复转换。
         """
+        # ── 步骤 0: 验证 snapshot_id 与 branch 的 head_snapshot_id 一致 ──
+        # 如果不一致，说明有其他操作修改了分支头（如回滚），记录警告
+        # Phase 1 不阻断执行，只记录日志
+        if self._db_session is not None and snapshot_id is not None:
+            try:
+                from platform_data.repositories.branch_repo import BranchRepository
+
+                branch_repo = BranchRepository(self._db_session)
+                branch = await branch_repo.get_by_id(branch_id)
+                if branch is not None and branch.head_snapshot_id != snapshot_id:
+                    logger.warning(
+                        "快照一致性检查: branch.head_snapshot_id=%s != "
+                        "传入 snapshot_id=%s, conversation=%s, branch=%s"
+                        "（可能发生了回滚）",
+                        branch.head_snapshot_id,
+                        snapshot_id,
+                        conv_id_str,
+                        branch_id,
+                    )
+            except Exception as exc:
+                # Phase 1 不阻断执行，仅记录异常
+                logger.debug(
+                    "快照一致性检查异常（不影响执行）: %s", exc
+                )
+
         # ── 步骤 1: SSE 通知分析开始 ──
         await publish_chat_analysis_start(conv_id_str, redis=redis)
 
@@ -302,6 +327,14 @@ class ChatOrchestrator:
             agents_executed=agents_executed,
         )
 
+        # ── 步骤 7.5: 检查是否需要压缩和决策抽取（不阻塞主流程） ──
+        await self._try_compress_and_extract(
+            branch_id=branch_id,
+            conversation_id=conversation_id,
+            project_id=project_id,
+            snapshot_id=snapshot_id,
+        )
+
         # ── 步骤 8: SSE 通知全部完成 ──
         await publish_chat_complete(
             conv_id_str,
@@ -323,6 +356,66 @@ class ChatOrchestrator:
             impact_report=report,
             cost_total=total_cost,
         )
+
+    async def _try_compress_and_extract(
+        self,
+        branch_id: UUID,
+        conversation_id: UUID,
+        project_id: UUID,
+        snapshot_id: UUID | None,
+    ) -> None:
+        """尝试对当前分支做对话压缩和决策抽取。
+
+        压缩或抽取失败不影响主流程，仅记录警告日志。
+
+        参数:
+            branch_id: 分支 ID
+            conversation_id: 会话 ID
+            project_id: 项目 ID
+            snapshot_id: 当前快照 ID
+        """
+        try:
+            from agents.analysis.decision_extractor import DecisionExtractor
+            from agents.analysis.summary_generator import SummaryGenerator
+
+            if self._db_session is None:
+                return
+
+            summary_gen = SummaryGenerator()
+            summary = await summary_gen.compress_branch(
+                db=self._db_session,
+                branch_id=branch_id,
+                conversation_id=conversation_id,
+            )
+
+            # 如果生成了 summary，触发决策抽取
+            if summary is not None:
+                extractor = DecisionExtractor()
+                # 加载要抽取决策的消息
+                from api_app.application.services.message_service import MessageService
+
+                msg_service = MessageService(self._db_session)
+                all_messages = await msg_service.list_by_branch(
+                    branch_id, limit=100,
+                )
+
+                decisions = await extractor.extract_decisions(all_messages)
+                if decisions and snapshot_id:
+                    await extractor.write_to_ir(
+                        db=self._db_session,
+                        project_id=project_id,
+                        snapshot_id=snapshot_id,
+                        decisions=decisions,
+                    )
+
+                logger.info(
+                    "对话压缩完成: conversation_id=%s, 决策数=%d",
+                    conversation_id,
+                    len(decisions),
+                )
+        except Exception as exc:
+            # 压缩失败不影响主流程
+            logger.warning("对话压缩/决策抽取失败: %s", exc)
 
     async def _run_cold_start(
         self,

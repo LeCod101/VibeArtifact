@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from api_app.api.routes.artifacts import router as artifacts_router
 from api_app.api.routes.auth import router as auth_router
+from api_app.api.routes.branches import router as branches_router
 from api_app.api.routes.conversations import router as conversations_router
 from api_app.api.routes.delegated import router as delegated_router
 from api_app.api.routes.generation import router as generation_router
@@ -29,4 +30,5 @@ app.include_router(conversations_router, prefix="/api/v1")
 app.include_router(generation_router, prefix="/api/v1")
 app.include_router(delegated_router, prefix="/api/v1")
 app.include_router(snapshots_router, prefix="/api/v1")
+app.include_router(branches_router, prefix="/api/v1")
 app.include_router(artifacts_router, prefix="/api/v1")

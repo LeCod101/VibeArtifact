@@ -255,11 +255,12 @@ async def send_message(
         )
 
     # ── 步骤 3: 加载当前快照 ──
-    current_snapshot_id = branch.head_snapshot_id
-
-    # Phase 1：没有快照加载机制，传空 nodes/edges（冷启动会处理）
-    ir_nodes = []
-    ir_edges = []
+    # 从分支加载当前快照的 IR 节点/边（替代 Phase 1 的空列表占位）
+    snapshot_id, ir_nodes, ir_edges = await conv_service.get_current_snapshot(
+        branch_id
+    )
+    # 如果方法返回了有效的 snapshot_id，使用它；否则回退到 branch.head_snapshot_id
+    current_snapshot_id = snapshot_id or branch.head_snapshot_id
 
     # ── 步骤 4: 保存用户消息 ──
     msg_service = MessageService(db)
@@ -269,6 +270,15 @@ async def send_message(
         role="user",
         content=body.content,
         snapshot_before_id=current_snapshot_id,
+    )
+
+    # ── 步骤 4.5: 构建精简对话上下文（summary + decisions + 近期消息） ──
+    from api_app.application.services.context_builder import ConversationContextBuilder
+
+    context_builder = ConversationContextBuilder(db)
+    conversation_context = await context_builder.build_context(
+        conversation_id=conversation_id,
+        branch_id=branch_id,
     )
 
     # ── 步骤 5: 调用 ChatOrchestrator ──
@@ -288,6 +298,7 @@ async def send_message(
         user_message=body.content,
         ir_nodes=ir_nodes,
         ir_edges=ir_edges,
+        conversation_context=conversation_context,
         redis=redis,
     )
 

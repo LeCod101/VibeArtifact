@@ -72,6 +72,8 @@ class MessageResponse(BaseModel):
         role: 消息角色
         content: 消息文本内容
         content_type: 内容类型（默认 "text"）
+        snapshot_before_id: 消息执行前的快照 ID（可选）
+        snapshot_after_id: 消息执行后的快照 ID（可选）
         created_at: 创建时间
     """
 
@@ -81,6 +83,8 @@ class MessageResponse(BaseModel):
     role: str
     content: str
     content_type: str
+    snapshot_before_id: str | None = None
+    snapshot_after_id: str | None = None
     created_at: datetime
 
     model_config = {"from_attributes": True}

@@ -95,6 +95,10 @@ export interface MessageResponse {
   content: string;
   content_type: string;
   created_at: string;
+  /** 消息执行前的快照 ID */
+  snapshot_before_id?: string | null;
+  /** 消息执行后的快照 ID */
+  snapshot_after_id?: string | null;
   /** 变更摘要（仅 assistant 消息可能携带） */
   change_summary?: ChangeSummaryResponse;
 }
@@ -170,4 +174,50 @@ export interface DelegatedRunListItem {
   status: string;
   created_at: string | null;
   completed_at: string | null;
+}
+
+/* ============ 分支相关 ============ */
+
+/** 创建分支请求 */
+export interface CreateBranchRequest {
+  parent_branch_id: string;
+  branch_name?: string;
+  base_snapshot_id?: string;
+}
+
+/** Fork 分支请求 */
+export interface ForkBranchRequest {
+  fork_point_snapshot_id: string;
+  branch_name?: string;
+}
+
+/** 分支信息响应 */
+export interface BranchResponse {
+  id: string;
+  conversation_id: string;
+  parent_branch_id: string | null;
+  base_snapshot_id: string | null;
+  head_snapshot_id: string | null;
+  branch_name: string | null;
+  created_at: string;
+  message_count: number;
+}
+
+/** 分支树节点 */
+export interface BranchTreeNode {
+  branch: BranchResponse;
+  children: BranchTreeNode[];
+}
+
+/** 回滚请求 */
+export interface RollbackRequest {
+  snapshot_id: string;
+}
+
+/** 回滚响应 */
+export interface RollbackResponse {
+  action: "forked" | "switched" | "no_change";
+  switched_branch_id: string;
+  new_branch_id: string | null;
+  snapshot_id: string;
 }
