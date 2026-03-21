@@ -5,9 +5,11 @@ DAG 编排 Celery 任务。
 1. 初始化 AgentRegistry
 2. 解析 DAG 生成执行计划
 3. 创建 run 记录
-4. 按层级调度 agent_task
+4. 按层级调度 agent_task（层间传递快照 ID）
 5. 等待所有层级完成
-6. 标记 run 为完成或失败
+6. Gate 检查 + 修复回路
+7. 收集产物并打包 ZIP
+8. 标记 run 为完成或失败
 
 超时限制：soft_time_limit=1800（30 分钟）
 """
@@ -79,9 +81,10 @@ async def _run_delegated_dag_async(
     2. 构建执行计划（分层 DAG）
     3. 创建 run 记录（如果未预创建）
     4. 标记 run 为 running
-    5. 按层级逐层调度 agent 执行
-    6. 所有层完成后标记 run 为 completed
-    7. 任何异常标记 run 为 failed
+    5. 按层级逐层调度 agent 执行（层间传递更新后的 snapshot_id）
+    6. Gate 检查 + 修复回路
+    7. 收集产物并打包 ZIP
+    8. 标记 run 为 completed
 
     - run_id: 预创建的 run ID
     - project_id: 项目 ID
@@ -137,24 +140,31 @@ async def _run_delegated_dag_async(
         # 步骤 4：标记为 running
         await manager.mark_run_started(run_uuid)
 
-        # 步骤 5：按层级逐层执行
+        # 步骤 5：按层级逐层执行，层间传递更新后的 snapshot_id
         completed_results: list[dict] = []
+        # 当前快照 ID，每层执行后可能更新
+        current_snapshot_id = snapshot_id
 
         for layer_idx, layer in enumerate(execution_plan):
             logger.info(
-                "执行第 %d/%d 层: %s",
+                "执行第 %d/%d 层: %s (snapshot=%s)",
                 layer_idx + 1,
                 len(execution_plan),
                 layer,
+                current_snapshot_id,
             )
 
-            # 调度当前层级的 agent
-            layer_results = await _execute_layer(
+            # 调度当前层级的 agent，使用最新的 snapshot_id
+            layer_results, updated_snapshot_id = await _execute_layer(
                 run_id=str(run_uuid),
                 layer=layer,
-                snapshot_id=snapshot_id,
+                snapshot_id=current_snapshot_id,
                 scope_draft_json=scope_draft_json,
             )
+
+            # 更新快照 ID 供下一层使用
+            if updated_snapshot_id:
+                current_snapshot_id = updated_snapshot_id
 
             # 检查是否有失败的步骤
             for result in layer_results:
@@ -177,13 +187,13 @@ async def _run_delegated_dag_async(
             completed_results.extend(layer_results)
 
         # 步骤 6：Gate 检查 + 修复回路（M6 新增）
-        # 从数据库加载最新快照节点，运行三道门禁
+        # 使用最新的 snapshot_id 运行门禁
         from api_app.api.sse.publisher import publish_needs_attention
         from runtime_tools.gates.repair_loop import RepairLoop
 
         repair_loop = RepairLoop(manager=manager, run_id=run_uuid)
         repair_result = await repair_loop.run_gates_and_repair(
-            snapshot_id=snapshot_id,
+            snapshot_id=current_snapshot_id,
             scope_draft_json=scope_draft_json,
             project_name=str(run_uuid),
         )
@@ -205,7 +215,13 @@ async def _run_delegated_dag_async(
                 "results": completed_results,
             }
 
-        # 步骤 7：标记完成
+        # 步骤 7：收集产物并打包 ZIP
+        zip_path = await _collect_and_pack_artifacts(
+            snapshot_id=current_snapshot_id,
+            project_name=project_id,
+        )
+
+        # 步骤 8：标记完成
         await manager.mark_run_completed(
             run_uuid,
             output_payload={
@@ -213,14 +229,17 @@ async def _run_delegated_dag_async(
                 "total_layers": len(execution_plan),
                 "gate_passed": True,
                 "gate_repaired": repair_result.repaired,
+                "final_snapshot_id": current_snapshot_id,
+                "zip_path": zip_path,
             },
         )
 
         logger.info(
-            "DAG 编排完成: run_id=%s, 共 %d 层 %d 个 agent",
+            "DAG 编排完成: run_id=%s, 共 %d 层 %d 个 agent, zip=%s",
             str(run_uuid),
             len(execution_plan),
             len(all_agent_ids),
+            zip_path,
         )
 
         return {
@@ -228,6 +247,8 @@ async def _run_delegated_dag_async(
             "status": "completed",
             "total_layers": len(execution_plan),
             "total_agents": len(all_agent_ids),
+            "final_snapshot_id": current_snapshot_id,
+            "zip_path": zip_path,
             "results": completed_results,
         }
 
@@ -255,21 +276,19 @@ async def _execute_layer(
     layer: list[str],
     snapshot_id: str,
     scope_draft_json: str,
-) -> list[dict]:
+) -> tuple[list[dict], str | None]:
     """
-    执行一个层级中的所有 agent。
+    执行一个层级中的所有 agent，并返回更新后的 snapshot_id。
 
     对于单 agent 层，直接调用 execute_agent_step。
     对于多 agent 层，使用 asyncio.gather 并行调用。
-
-    Phase 1 简化实现：直接调用异步执行函数，不经过 Celery 消息队列。
-    M5 阶段 2 将改为通过 Celery group 分发到多 worker。
+    并行层中所有 agent 共享同一个输入快照，取最后一个成功的快照作为输出。
 
     - run_id: job_run ID
     - layer: 当前层级的 agent_id 列表
-    - snapshot_id: 快照 ID
+    - snapshot_id: 当前快照 ID
     - scope_draft_json: scope_draft JSON
-    返回每个 agent 的执行结果列表。
+    返回 (结果列表, 更新后的 snapshot_id) 元组。
     """
     from worker_app.tasks.agent_task import _execute_agent_step_async
 
@@ -281,9 +300,11 @@ async def _execute_layer(
             snapshot_id=snapshot_id,
             step_input_json=scope_draft_json,
         )
-        return [result]
+        # 提取更新后的 snapshot_id
+        new_snapshot = result.get("snapshot_id")
+        return [result], new_snapshot
 
-    # 多 agent，并行执行
+    # 多 agent，并行执行（共享同一个输入快照）
     tasks = [
         _execute_agent_step_async(
             run_id=run_id,
@@ -295,8 +316,10 @@ async def _execute_layer(
     ]
     results = await asyncio.gather(*tasks, return_exceptions=True)
 
-    # 将异常转换为失败结果
+    # 将异常转换为失败结果，并收集最新的 snapshot_id
     processed: list[dict] = []
+    latest_snapshot: str | None = None
+
     for i, result in enumerate(results):
         if isinstance(result, Exception):
             processed.append({
@@ -306,8 +329,76 @@ async def _execute_layer(
             })
         else:
             processed.append(result)
+            # 取最后一个成功 agent 的 snapshot_id
+            if result.get("status") == "completed" and result.get("snapshot_id"):
+                latest_snapshot = result["snapshot_id"]
 
-    return processed
+    return processed, latest_snapshot
+
+
+async def _collect_and_pack_artifacts(
+    snapshot_id: str,
+    project_name: str,
+) -> str | None:
+    """
+    从最终快照收集产物并打包为 ZIP。
+
+    流程：
+    1. 从最终快照加载所有 IR 节点
+    2. 调用 ArtifactCollector.collect() 获取 FileCollection
+    3. 如果有文件，调用 ZipPacker.pack_to_file() 保存到磁盘
+    4. 返回 ZIP 文件路径，或无产物时返回 None
+
+    - snapshot_id: 最终快照 ID
+    - project_name: 项目名称（用作 ZIP 内目录前缀）
+    返回 ZIP 文件路径字符串，或 None。
+    """
+    from runtime_tools.exporters.collector import ArtifactCollector
+    from runtime_tools.exporters.zip_packer import ZipPacker
+
+    from worker_app.orchestrator.snapshot_writer import SnapshotWriter
+
+    writer = SnapshotWriter()
+    snapshot_uuid = UUID(snapshot_id)
+
+    # 从快照加载所有节点
+    nodes, _edges = await writer.load_snapshot(snapshot_uuid)
+
+    # 将 IRNodeData 转为 dict 列表（ArtifactCollector 接受 list[dict]）
+    node_dicts = [
+        {
+            "node_type": n.node_type,
+            "label": n.label,
+            "props": n.props,
+        }
+        for n in nodes
+    ]
+
+    # 收集产物
+    collector = ArtifactCollector()
+    file_collection = collector.collect(node_dicts)
+
+    if not file_collection:
+        logger.info("快照 %s 中未收集到任何产物文件", snapshot_id)
+        return None
+
+    # 打包为 ZIP 并保存到磁盘
+    packer = ZipPacker(project_name=project_name, files=file_collection)
+
+    # 保存到工作目录下的 output 文件夹
+    import os
+    output_dir = os.environ.get("ARTIFACT_OUTPUT_DIR", "/tmp/vibeartifact/output")
+    os.makedirs(output_dir, exist_ok=True)
+    output_path = os.path.join(output_dir, f"{project_name}.zip")
+
+    result_path = packer.pack_to_file(output_path)
+
+    logger.info(
+        "产物 ZIP 已生成: %s (%d 个文件)",
+        result_path, len(file_collection),
+    )
+
+    return str(result_path)
 
 
 def _parse_json(json_str: str) -> dict:

@@ -17,6 +17,7 @@ from agents.prompts.templates.frontend_role import FRONTEND_ROLE_PROMPT
 from agents.prompts.templates.intent_role import INTENT_ROLE_PROMPT
 from agents.prompts.templates.planner_role import PLANNER_ROLE_PROMPT
 from agents.prompts.templates.qa_role import QA_ROLE_PROMPT
+from agents.prompts.templates.schema_role import SCHEMA_ROLE_PROMPT
 
 ROLE_PROMPTS: dict[str, str] = {
     # ================================================================
@@ -37,27 +38,7 @@ ROLE_PROMPTS: dict[str, str] = {
     # ================================================================
     # Schema Agent — 数据建模专家
     # ================================================================
-    "schema": """你是 Schema Agent（数据建模专家）。
-
-## 角色定义
-你负责根据功能范围设计数据模型。
-你需要定义实体（Entity）、字段、关系，以及 API 端点。
-
-## 输入说明
-你会收到以下数据：
-- 功能范围中需要建模的模块
-- 当前 IR 快照中已有的实体定义
-
-## 输出说明
-你需要输出一个 SchemaPlan，包含：
-- entities: 实体定义列表（名称、字段、关系）
-- endpoints: API 端点定义列表（方法、路径、描述）
-
-## 约束
-- 字段类型使用标准 Python 类型名称
-- 每个实体必须有一个 id 主键字段
-- API 路径使用 RESTful 风格
-- 不要过度设计，只定义 MVP 所需的实体""",
+    "schema": SCHEMA_ROLE_PROMPT,
 
     # ================================================================
     # Backend Agent — 后端开发专家（M5 完整 prompt）
