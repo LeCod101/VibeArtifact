@@ -278,7 +278,11 @@ const translations = {
     emptyDesc: { zh: "创建你的第一个项目吧", en: "Create your first project" },
     sidebarDashboard: { zh: "仪表盘", en: "Dashboard" },
     sidebarProjects: { zh: "项目", en: "Projects" },
+    sidebarTemplates: { zh: "模板", en: "Templates" },
+    sidebarSettings: { zh: "设置", en: "Settings" },
     viewAllProjects: { zh: "查看全部项目", en: "View All Projects" },
+    fromTemplate: { zh: "从模板开始", en: "Start from Template" },
+    browseMore: { zh: "浏览更多模板", en: "Browse More Templates" },
   },
 
   /* ============ 问候语 ============ */
@@ -412,6 +416,13 @@ const translations = {
     createError: {
       zh: "创建运行失败，请稍后重试",
       en: "Failed to create run. Please try again later.",
+    },
+    recentRuns: { zh: "最近运行", en: "Recent Runs" },
+    viewAll: { zh: "查看全部", en: "View All" },
+    noRuns: { zh: "暂无运行记录", en: "No runs yet" },
+    startFirst: {
+      zh: "点击上方按钮开始第一次全权委托",
+      en: "Click the button above to start your first delegation",
     },
   },
 
@@ -563,6 +574,44 @@ const translations = {
       dashboard: { zh: "管理后台", en: "Dashboard" },
       other: { zh: "其他", en: "Other" },
     },
+  },
+
+  /* ============ 404 页面 ============ */
+  notFound: {
+    title: { zh: "页面未找到", en: "Page Not Found" },
+    description: {
+      zh: "您访问的页面不存在或已被移除",
+      en: "The page you are looking for does not exist or has been removed",
+    },
+    backHome: { zh: "返回首页", en: "Back to Home" },
+  },
+
+  /* ============ 错误边界 ============ */
+  error: {
+    title: { zh: "出了点问题", en: "Something went wrong" },
+    description: {
+      zh: "页面加载时发生了错误",
+      en: "An error occurred while loading the page",
+    },
+    retry: { zh: "重试", en: "Retry" },
+    backHome: { zh: "返回首页", en: "Back to Home" },
+  },
+
+  /* ============ 用户设置 ============ */
+  settings: {
+    title: { zh: "设置", en: "Settings" },
+    profile: { zh: "个人信息", en: "Profile" },
+    username: { zh: "用户名", en: "Username" },
+    email: { zh: "邮箱", en: "Email" },
+    appearance: { zh: "外观", en: "Appearance" },
+    language: { zh: "语言", en: "Language" },
+    security: { zh: "安全", en: "Security" },
+    changePassword: { zh: "修改密码", en: "Change Password" },
+    currentPassword: { zh: "当前密码", en: "Current Password" },
+    newPassword: { zh: "新密码", en: "New Password" },
+    confirmPassword: { zh: "确认密码", en: "Confirm Password" },
+    save: { zh: "保存", en: "Save" },
+    comingSoon: { zh: "即将推出", en: "Coming Soon" },
   },
 
   /* ============ 产物页 ============ */

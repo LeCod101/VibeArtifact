@@ -17,12 +17,14 @@ import {
   Loader2,
   ChevronDown,
   ArrowRight,
+  LayoutTemplate,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useLocale } from "@/i18n/context";
 import t from "@/i18n/translations";
 import type { Locale } from "@/i18n/translations";
 import { useProjectsQuery, useCreateProjectMutation } from "@/features/project/api";
+import { useTemplatesQuery } from "@/features/templates/api";
 import { useAuthStore } from "@/stores/auth-store";
 import { CreateProjectDialog } from "@/features/project/components/create-project-dialog";
 import { Card, CardContent } from "@/components/ui/card";
@@ -58,6 +60,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const { user } = useAuthStore();
   const { data: projects, isLoading } = useProjectsQuery();
+  const { data: templates } = useTemplatesQuery();
   const createMutation = useCreateProjectMutation();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [inputValue, setInputValue] = useState("");
@@ -256,6 +259,52 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
+
+      {/* 从模板开始区域 */}
+      {templates && templates.length > 0 && (
+        <div
+          className="w-full max-w-4xl mt-8 animate-reveal"
+          style={{ animationDelay: "0.3s" }}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <LayoutTemplate size={14} />
+              {L(t.dashboard.fromTemplate, locale)}
+            </h2>
+            <Link href="/templates">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="gap-1 text-muted-foreground"
+              >
+                {L(t.dashboard.browseMore, locale)}
+                <ArrowRight size={14} />
+              </Button>
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {templates.slice(0, 3).map((tpl) => (
+              <Card
+                key={tpl.id}
+                className="cursor-pointer transition-all duration-200 hover:shadow-md hover:border-foreground/15"
+                onClick={() => router.push("/templates")}
+              >
+                <CardContent className="p-4 flex items-center gap-3">
+                  <span className="text-2xl">{tpl.icon || "📦"}</span>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-sm font-medium truncate">
+                      {tpl.name}
+                    </h3>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {tpl.description}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
 
       <CreateProjectDialog open={dialogOpen} onOpenChange={setDialogOpen} />
     </div>

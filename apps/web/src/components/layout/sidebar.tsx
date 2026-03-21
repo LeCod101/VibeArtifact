@@ -7,7 +7,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, FolderOpen, LogOut, Languages } from "lucide-react";
+import { LayoutDashboard, FolderOpen, LayoutTemplate, Settings, LogOut, Languages } from "lucide-react";
 import { useLocale } from "@/i18n/context";
 import t from "@/i18n/translations";
 import type { Locale } from "@/i18n/translations";
@@ -31,6 +31,7 @@ function L(obj: { zh: any; en: any }, locale: Locale) {
 const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: { zh: "仪表盘", en: "Dashboard" } },
   { href: "/projects", icon: FolderOpen, label: { zh: "项目", en: "Projects" } },
+  { href: "/templates", icon: LayoutTemplate, label: { zh: "模板", en: "Templates" } },
 ];
 
 export function Sidebar() {
@@ -92,6 +93,19 @@ export function Sidebar() {
 
       {/* 底部操作区 */}
       <div className="flex flex-col items-center gap-2">
+        {/* 设置入口 */}
+        <Link
+          href="/settings"
+          title={L({ zh: "设置", en: "Settings" }, locale)}
+          className={`flex items-center justify-center w-10 h-10 rounded-lg transition-colors ${
+            pathname === "/settings" || pathname.startsWith("/settings/")
+              ? "bg-sidebar-accent text-sidebar-primary"
+              : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+          }`}
+        >
+          <Settings size={18} />
+        </Link>
+
         {/* 语言切换 */}
         <button
           onClick={toggleLocale}

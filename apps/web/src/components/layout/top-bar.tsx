@@ -7,7 +7,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Menu, LayoutDashboard, FolderOpen, LogOut, Languages } from "lucide-react";
+import { Menu, LayoutDashboard, FolderOpen, LayoutTemplate, Settings, LogOut, Languages } from "lucide-react";
 import { useLocale } from "@/i18n/context";
 import t from "@/i18n/translations";
 import type { Locale } from "@/i18n/translations";
@@ -26,6 +26,8 @@ function L(obj: { zh: any; en: any }, locale: Locale) {
 const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, labelKey: "sidebarDashboard" as const },
   { href: "/projects", icon: FolderOpen, labelKey: "sidebarProjects" as const },
+  { href: "/templates", icon: LayoutTemplate, labelKey: "sidebarTemplates" as const },
+  { href: "/settings", icon: Settings, labelKey: "sidebarSettings" as const },
 ];
 
 export function TopBar() {
