@@ -16,5 +16,8 @@ class Settings(BaseSettings):
     # JWT 签名算法
     JWT_ALGORITHM: str = "HS256"
 
+    # API Key 加密密钥（Fernet 对称加密，必须通过环境变量设置）
+    ENCRYPTION_KEY: str = ""
+
 
 settings = Settings()

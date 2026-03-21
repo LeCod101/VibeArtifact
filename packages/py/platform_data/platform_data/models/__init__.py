@@ -40,8 +40,14 @@ from platform_data.models.project import ModelTier, Project, ProjectConfig, Proj
 # Template
 from platform_data.models.template import ProjectTemplate, TemplateCategory
 
+# Usage
+from platform_data.models.usage_record import UsageRecord
+
 # User & Project
 from platform_data.models.user import User, UserStatus
+
+# User API Key & Model Preference
+from platform_data.models.user_api_key import UserApiKey, UserModelPreference
 
 __all__ = [
     "Base",
@@ -84,4 +90,9 @@ __all__ = [
     # Template
     "ProjectTemplate",
     "TemplateCategory",
+    # User API Key & Model Preference
+    "UserApiKey",
+    "UserModelPreference",
+    # Usage
+    "UsageRecord",
 ]

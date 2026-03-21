@@ -289,7 +289,7 @@ async def send_message(
         # Redis 不可用时跳过 SSE
         redis = None
 
-    orchestrator = ChatOrchestrator(db_session=db)
+    orchestrator = ChatOrchestrator(db_session=db, user_id=current_user.id)
     result = await orchestrator.handle_message(
         project_id=conversation.project_id,
         conversation_id=conversation_id,

@@ -285,3 +285,70 @@ export interface AdjustRequest {
   feedback: string;
   reason?: string;
 }
+
+/* ============ 设置相关 ============ */
+
+/** API 密钥创建/更新请求 */
+export interface ApiKeyCreateRequest {
+  provider: string;
+  api_key: string;
+  display_label?: string;
+}
+
+/** API 密钥响应（掩码显示） */
+export interface ApiKeyResponse {
+  id: string;
+  provider: string;
+  masked_key: string;
+  display_label: string | null;
+  is_active: boolean;
+  is_valid: boolean | null;
+  last_validated_at: string | null;
+  created_at: string;
+}
+
+/** 密钥验证结果 */
+export interface ApiKeyValidateResponse {
+  key_id: string;
+  provider: string;
+  is_valid: boolean;
+  message: string;
+}
+
+/** 模型偏好请求 */
+export interface ModelPreferenceRequest {
+  reasoning_model?: string | null;
+  generation_model?: string | null;
+}
+
+/** 模型偏好响应 */
+export interface ModelPreferenceResponse {
+  reasoning_model: string | null;
+  generation_model: string | null;
+}
+
+/** 按提供商汇总的用量 */
+export interface ProviderUsageSummary {
+  provider: string;
+  total_prompt_tokens: number;
+  total_completion_tokens: number;
+  total_cost: number;
+  call_count: number;
+}
+
+/** 用量汇总响应 */
+export interface UsageSummaryResponse {
+  total_prompt_tokens: number;
+  total_completion_tokens: number;
+  total_cost: number;
+  call_count: number;
+  by_provider: ProviderUsageSummary[];
+}
+
+/** 可用模型 */
+export interface AvailableModel {
+  id: string;
+  name: string;
+  provider: string;
+  tier: string;
+}

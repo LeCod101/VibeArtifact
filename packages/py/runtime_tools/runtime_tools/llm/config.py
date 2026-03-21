@@ -45,6 +45,9 @@ class LLMConfig(BaseModel):
     default_max_tokens: int = 4096
     api_keys: dict[str, str] = {}
 
+    # 密钥来源标识: "user" 或 "platform"
+    key_source: str = "platform"
+
     @classmethod
     def from_env(cls) -> LLMConfig:
         """
@@ -58,7 +61,7 @@ class LLMConfig(BaseModel):
         - ANTHROPIC_API_KEY: Anthropic API 密钥
         - OPENAI_API_KEY: OpenAI API 密钥
 
-        Returns:
+        返回:
             从环境变量填充的 LLMConfig 实例
         """
         # 收集所有已知 provider 的 API 密钥
@@ -100,6 +103,46 @@ class LLMConfig(BaseModel):
             default_temperature=default_temperature,
             default_max_tokens=default_max_tokens,
             api_keys=api_keys,
+        )
+
+    @classmethod
+    def from_user(
+        cls,
+        user_api_keys: dict[str, str],
+        reasoning_model: str | None = None,
+        generation_model: str | None = None,
+    ) -> LLMConfig:
+        """
+        从用户配置构建 LLM 配置，回退到环境变量。
+
+        优先使用用户提供的 API 密钥和模型偏好，
+        如果用户未配置则回退到环境变量默认值。
+
+        参数:
+            user_api_keys: 用户的 API 密钥映射（环境变量名 → 密钥值）
+            reasoning_model: 用户选择的推理模型（None 时使用默认值）
+            generation_model: 用户选择的生成模型（None 时使用默认值）
+
+        返回:
+            合并后的 LLMConfig 实例
+        """
+        # 先从环境变量获取基准配置
+        env_config = cls.from_env()
+
+        # 用户密钥覆盖环境变量密钥
+        merged_keys = dict(env_config.api_keys)
+        merged_keys.update(user_api_keys)
+
+        # 判断密钥来源
+        key_source = "user" if user_api_keys else "platform"
+
+        return cls(
+            reasoning_model=reasoning_model or env_config.reasoning_model,
+            generation_model=generation_model or env_config.generation_model,
+            default_temperature=env_config.default_temperature,
+            default_max_tokens=env_config.default_max_tokens,
+            api_keys=merged_keys,
+            key_source=key_source,
         )
 
 

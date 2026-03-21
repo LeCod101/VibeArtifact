@@ -95,14 +95,16 @@ class ChatOrchestrator:
     - redis 参数可选，为 None 时跳过 SSE 发布
     """
 
-    def __init__(self, db_session=None) -> None:
+    def __init__(self, db_session=None, user_id: UUID | None = None) -> None:
         """
         初始化编排器。
 
         参数:
-            db_session: 数据库会话（Phase 1 预留，暂不使用）
+            db_session: 数据库会话
+            user_id: 当前用户 ID（用于加载用户 API Key 和模型偏好）
         """
         self._db_session = db_session
+        self._user_id = user_id
 
     async def handle_message(
         self,
@@ -209,7 +211,26 @@ class ChatOrchestrator:
 
         参数同 handle_message，额外传入 conv_id_str 避免重复转换。
         """
-        # ── 步骤 0: 验证 snapshot_id 与 branch 的 head_snapshot_id 一致 ──
+        # ── 步骤 0a: 预加载用户 LLM 配置 ──
+        self._user_config = None
+        if self._user_id is not None and self._db_session is not None:
+            try:
+                from runtime_tools.llm.config import LLMConfig
+
+                from api_app.application.services.settings_service import SettingsService
+
+                svc = SettingsService(self._db_session)
+                user_keys = await svc.get_user_api_keys_decrypted(self._user_id)
+                pref = await svc.get_model_preference(self._user_id)
+                self._user_config = LLMConfig.from_user(
+                    user_api_keys=user_keys,
+                    reasoning_model=pref.reasoning_model,
+                    generation_model=pref.generation_model,
+                )
+            except Exception as exc:
+                logger.warning("加载用户 LLM 配置失败，回退环境变量: %s", exc)
+
+        # ── 步骤 0b: 验证 snapshot_id 与 branch 的 head_snapshot_id 一致 ──
         # 如果不一致，说明有其他操作修改了分支头（如回滚），记录警告
         # Phase 1 不阻断执行，只记录日志
         if self._db_session is not None and snapshot_id is not None:
@@ -690,26 +711,40 @@ class ChatOrchestrator:
 
         return processed
 
-    @staticmethod
-    def _create_agent_runner():
+    def _create_agent_runner(self):
         """
         创建 AgentRunner 实例。
 
-        参照 orchestrate.py 的模式，初始化 AgentRegistry 并创建 runner。
-        使用 LiteLLMProvider 作为 LLM 调用实现。
+        如果有 user_id 和 db_session，则从数据库加载用户 API Key 和模型偏好，
+        使用 LLMConfig.from_user() 构建配置；否则回退到环境变量。
 
         返回:
             AgentRunner 实例
         """
         from agents.configs.definitions import register_all_agents
         from agents.executors.runner import AgentRunner
+        from runtime_tools.llm.config import LLMConfig
         from runtime_tools.llm.provider import LiteLLMProvider
 
         # 确保 Agent 已注册
         registry = register_all_agents()
 
+        # 尝试加载用户配置
+        config = None
+        if self._user_id is not None and self._db_session is not None:
+            try:
+                # 注意：这里是同步上下文内调用，使用 run_sync 模式
+                # 由于 _create_agent_runner 在 async 方法中被调用后立即使用，
+                # 用户密钥已在 handle_message 开头预加载到 self._user_config
+                config = self._user_config
+            except AttributeError:
+                pass
+
+        if config is None:
+            config = LLMConfig.from_env()
+
         # 创建 LLM Provider 和 Runner
-        llm_provider = LiteLLMProvider()
+        llm_provider = LiteLLMProvider(config=config)
         return AgentRunner(
             llm_provider=llm_provider,
             registry=registry,

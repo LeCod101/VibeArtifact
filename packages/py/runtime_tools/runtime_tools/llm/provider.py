@@ -7,11 +7,15 @@ LiteLLMProvider 通过 LiteLLM 库统一对接各家 LLM API。
 
 from __future__ import annotations
 
+import logging
 import time
 from abc import ABC, abstractmethod
+from typing import Callable
 
 from .config import LLMConfig
 from .schemas import LLMRequest, LLMResponse, LLMUsage
+
+logger = logging.getLogger(__name__)
 
 
 class BaseLLMProvider(ABC):
@@ -44,14 +48,20 @@ class LiteLLMProvider(BaseLLMProvider):
     统一对接 Anthropic、OpenAI、Google 等各家 LLM API。
     """
 
-    def __init__(self, config: LLMConfig | None = None):
+    def __init__(
+        self,
+        config: LLMConfig | None = None,
+        usage_callback: Callable[[LLMResponse], None] | None = None,
+    ):
         """
         初始化 LiteLLM Provider。
 
-        Args:
+        参数:
             config: LLM 配置，为 None 时从环境变量自动读取
+            usage_callback: 用量回调函数，每次 LLM 调用后回调（可选）
         """
         self.config = config or LLMConfig.from_env()
+        self._usage_callback = usage_callback
 
     async def complete(self, request: LLMRequest) -> LLMResponse:
         """
@@ -84,6 +94,18 @@ class LiteLLMProvider(BaseLLMProvider):
         if request.response_format is not None:
             kwargs["response_format"] = request.response_format
 
+        # 如果配置中有对应 provider 的 API Key，直接传给 litellm
+        model_provider = request.model.split("/")[0] if "/" in request.model else ""
+        provider_env_map = {
+            "anthropic": "ANTHROPIC_API_KEY",
+            "openai": "OPENAI_API_KEY",
+            "google": "GOOGLE_API_KEY",
+            "azure": "AZURE_API_KEY",
+        }
+        env_var = provider_env_map.get(model_provider, "")
+        if env_var and env_var in self.config.api_keys:
+            kwargs["api_key"] = self.config.api_keys[env_var]
+
         # 记录开始时间
         start = time.monotonic()
 
@@ -109,7 +131,7 @@ class LiteLLMProvider(BaseLLMProvider):
         provider_name = hidden_params.get("custom_llm_provider", "")
         response_cost = hidden_params.get("response_cost", 0.0)
 
-        return LLMResponse(
+        llm_response = LLMResponse(
             content=content,
             model=response.model or request.model,
             provider=provider_name,
@@ -117,3 +139,12 @@ class LiteLLMProvider(BaseLLMProvider):
             latency_ms=elapsed_ms,
             cost=response_cost,
         )
+
+        # 调用用量回调（如果配置了）
+        if self._usage_callback is not None:
+            try:
+                self._usage_callback(llm_response)
+            except Exception as exc:
+                logger.warning("用量回调执行失败: %s", exc)
+
+        return llm_response

@@ -12,6 +12,7 @@ from api_app.api.routes.delegated import router as delegated_router
 from api_app.api.routes.generation import router as generation_router
 from api_app.api.routes.health import router as health_router
 from api_app.api.routes.projects import router as projects_router
+from api_app.api.routes.settings import router as settings_router
 from api_app.api.routes.snapshots import router as snapshots_router
 from api_app.api.routes.templates import router as templates_router
 
@@ -36,3 +37,4 @@ app.include_router(branches_router, prefix="/api/v1")
 app.include_router(artifacts_router, prefix="/api/v1")
 app.include_router(approvals_router, prefix="/api/v1")
 app.include_router(templates_router, prefix="/api/v1")
+app.include_router(settings_router, prefix="/api/v1")
