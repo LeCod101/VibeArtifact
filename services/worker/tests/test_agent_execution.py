@@ -16,11 +16,9 @@ M10 Agent 真实执行闭环集成测试。
 
 from __future__ import annotations
 
-import importlib
 import json
-import sys
 from unittest.mock import AsyncMock, MagicMock, patch
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 import pytest
 
@@ -313,6 +311,7 @@ class TestIROperationsApplied:
 
 # ──────────────────────────────────────────────
 # 以下测试需要 celery 依赖
+# patch 延迟导入的模块需要 patch 实际来源路径
 # ──────────────────────────────────────────────
 
 
@@ -355,16 +354,17 @@ class TestAgentRunnerCalled:
         mock_runner = AsyncMock()
         mock_runner.run.return_value = mock_result
 
+        # patch 延迟导入的实际来源模块
         with patch(
-            "worker_app.tasks.agent_task.SnapshotWriter",
+            "worker_app.orchestrator.snapshot_writer.SnapshotWriter",
             return_value=mock_writer,
         ), patch(
-            "worker_app.tasks.agent_task.AgentRunner",
+            "agents.executors.runner.AgentRunner",
             return_value=mock_runner,
         ), patch(
-            "worker_app.tasks.agent_task.LiteLLMProvider",
+            "runtime_tools.llm.provider.LiteLLMProvider",
         ), patch(
-            "worker_app.tasks.agent_task.register_all_agents",
+            "agents.configs.definitions.register_all_agents",
         ):
             from worker_app.tasks.agent_task import _run_agent
 
@@ -404,15 +404,15 @@ class TestSnapshotWritten:
         mock_runner.run.return_value = mock_result
 
         with patch(
-            "worker_app.tasks.agent_task.SnapshotWriter",
+            "worker_app.orchestrator.snapshot_writer.SnapshotWriter",
             return_value=mock_writer,
         ), patch(
-            "worker_app.tasks.agent_task.AgentRunner",
+            "agents.executors.runner.AgentRunner",
             return_value=mock_runner,
         ), patch(
-            "worker_app.tasks.agent_task.LiteLLMProvider",
+            "runtime_tools.llm.provider.LiteLLMProvider",
         ), patch(
-            "worker_app.tasks.agent_task.register_all_agents",
+            "agents.configs.definitions.register_all_agents",
         ):
             from worker_app.tasks.agent_task import _run_agent
 
@@ -441,8 +441,9 @@ class TestSnapshotChain:
         snap1 = uuid4()
         snap2 = uuid4()
 
+        # patch agent_task 中的延迟导入函数
         with patch(
-            "worker_app.tasks.orchestrate._execute_agent_step_async",
+            "worker_app.tasks.agent_task._execute_agent_step_async",
         ) as mock_exec:
             mock_exec.side_effect = [
                 {
@@ -492,7 +493,7 @@ class TestAgentFailureDoesntBlock:
     async def test_parallel_layer_partial_failure(self):
         """并行层中一个 Agent 失败，其他仍然成功。"""
         with patch(
-            "worker_app.tasks.orchestrate._execute_agent_step_async",
+            "worker_app.tasks.agent_task._execute_agent_step_async",
         ) as mock_exec:
             mock_exec.side_effect = [
                 {
@@ -542,7 +543,7 @@ class TestCollectAndPackArtifacts:
         mock_writer.load_snapshot.return_value = ([code_node], [])
 
         with patch(
-            "worker_app.tasks.orchestrate.SnapshotWriter",
+            "worker_app.orchestrator.snapshot_writer.SnapshotWriter",
             return_value=mock_writer,
         ), patch.dict(
             "os.environ",
@@ -574,7 +575,7 @@ class TestCollectAndPackArtifacts:
         mock_writer.load_snapshot.return_value = ([entity_node], [])
 
         with patch(
-            "worker_app.tasks.orchestrate.SnapshotWriter",
+            "worker_app.orchestrator.snapshot_writer.SnapshotWriter",
             return_value=mock_writer,
         ):
             from worker_app.tasks.orchestrate import _collect_and_pack_artifacts
@@ -610,7 +611,7 @@ class TestFullDagMock:
             }
 
         with patch(
-            "worker_app.tasks.orchestrate._execute_agent_step_async",
+            "worker_app.tasks.agent_task._execute_agent_step_async",
             side_effect=mock_step,
         ):
             from worker_app.tasks.orchestrate import _execute_layer

@@ -12,9 +12,6 @@ from __future__ import annotations
 
 from uuid import UUID, uuid4
 
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
-
 from ir_core.schema.data import IREdgeData, IRNodeData
 from platform_data.models.ir import (
     IREdge,
@@ -22,6 +19,8 @@ from platform_data.models.ir import (
     IRSnapshot,
     SnapshotStatus,
 )
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 # 复用 RunManager 中定义的 Worker 端会话工厂
 from worker_app.orchestrator.run_manager import get_worker_session_factory
