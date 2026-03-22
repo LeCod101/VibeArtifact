@@ -82,7 +82,14 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 async function parseErrorDetail(res: Response): Promise<string> {
   try {
     const body = await res.json();
-    return body.detail || body.message || `HTTP ${res.status}`;
+    const raw = body.detail || body.message;
+    if (!raw) return `HTTP ${res.status}`;
+    if (typeof raw === "string") return raw;
+    // FastAPI 422 返回 detail 为验证错误数组，提取 msg 字段拼接
+    if (Array.isArray(raw)) {
+      return raw.map((e: { msg?: string }) => e.msg ?? JSON.stringify(e)).join("; ");
+    }
+    return JSON.stringify(raw);
   } catch {
     return `HTTP ${res.status} ${res.statusText}`;
   }
