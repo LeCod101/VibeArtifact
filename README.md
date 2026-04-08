@@ -55,7 +55,7 @@ Agent 分析 → 选择工具 → 调用工具
 | 前端 | Next.js 16 + React 19 + TypeScript | 三栏工作区 UI |
 | UI 组件 | Tailwind CSS v4 + Shadcn UI | 现代化组件库 |
 | 后端 API | FastAPI + Python 3.12 | SSE 流式响应 + RESTful API |
-| Agent 引擎 | 单 Agent + 工具注册 + LiteLLM | 多模型统一抽象 |
+| Agent 引擎 | 单 Agent + 工具注册 + LiteLLM | 多模型统一抽象（DeepSeek/GLM/Qwen/Claude/GPT） |
 | 异步任务 | Celery + Redis | 导出打包、批量生成 |
 | 数据库 | PostgreSQL + SQLAlchemy 2 + Alembic | 异步 ORM + 版本迁移 |
 | 缓存/队列 | Redis | 任务队列、Celery broker |

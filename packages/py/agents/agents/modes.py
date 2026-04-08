@@ -29,6 +29,7 @@ class ModeConfig:
         model_override: 覆盖默认模型的标识，None 表示使用默认模型
         temperature: 采样温度
         allowed_tools: 该模式下允许使用的工具名集合，None 表示全部可用
+        use_reasoning_model: 为 True 时 Agent 使用 config.reasoning_model
     """
 
     name: str
@@ -37,9 +38,9 @@ class ModeConfig:
     model_override: str | None
     temperature: float
     allowed_tools: frozenset[str] | None = None
+    use_reasoning_model: bool = False
 
 
-# 讨论模式下仅允许解释和追问
 _DISCUSSION_ALLOWED_TOOLS = frozenset({"explain_code", "ask_clarification"})
 
 _MODE_CONFIGS: dict[AgentMode, ModeConfig] = {
@@ -64,22 +65,13 @@ _MODE_CONFIGS: dict[AgentMode, ModeConfig] = {
         tools_enabled=True,
         model_override=None,
         temperature=0.3,
+        use_reasoning_model=True,
     ),
 }
 
 
 def get_mode_config(mode: AgentMode) -> ModeConfig:
-    """根据模式枚举获取对应的配置。
-
-    Args:
-        mode: Agent 运行模式
-
-    Returns:
-        对应的 ModeConfig 实例
-
-    Raises:
-        ValueError: 未知的模式值
-    """
+    """根据模式枚举获取对应的配置。"""
     config = _MODE_CONFIGS.get(mode)
     if config is None:
         raise ValueError(f"未知的 Agent 模式: {mode}")

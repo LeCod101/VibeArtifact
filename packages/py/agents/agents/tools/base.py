@@ -114,12 +114,15 @@ def tool(func: Callable[..., Any]) -> Callable[..., Any]:
 
     被装饰的函数必须是 async 的，返回 dict。
     装饰器会在函数上附加 ``_tool_definition`` 属性。
+
+    以 ``_`` 开头的参数（如 ``_ctx``）不会出现在 JSON Schema 中，
+    它们由 ToolExecutor 在运行时注入，对 LLM 不可见。
     """
     if not inspect.iscoroutinefunction(func):
         raise TypeError(f"工具函数 {func.__name__} 必须是 async 函数")
 
     sig = inspect.signature(func)
-    hints = get_type_hints(func)
+    hints = get_type_hints(func, include_extras=True)
     description, param_descs = _parse_docstring(func.__doc__ or "")
 
     properties: dict[str, Any] = {}
@@ -127,6 +130,9 @@ def tool(func: Callable[..., Any]) -> Callable[..., Any]:
 
     for param_name, param in sig.parameters.items():
         if param_name == "self":
+            continue
+        # 下划线开头的参数由 ToolExecutor 注入，不暴露给 LLM
+        if param_name.startswith("_"):
             continue
 
         python_type = hints.get(param_name, str)

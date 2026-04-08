@@ -30,63 +30,62 @@ class LLMConfig(BaseModel):
     LLM 配置模型。
 
     从环境变量读取模型选择和 API 密钥配置。
+    默认使用国产模型（DeepSeek），支持 DeepSeek/GLM/Qwen 及海外模型。
 
     Attributes:
-        reasoning_model: 推理模型标识
-        generation_model: 生成模型标识
+        reasoning_model: 推理模型标识（深度思考场景）
+        generation_model: 生成模型标识（代码/文档生成场景）
         default_temperature: 默认采样温度
         default_max_tokens: 默认最大生成 token 数
-        api_keys: provider 名称到 API 密钥的映射
+        api_keys: provider 环境变量名到 API 密钥值的映射
     """
 
-    reasoning_model: str = "anthropic/claude-sonnet-4-20250514"
-    generation_model: str = "anthropic/claude-sonnet-4-20250514"
+    reasoning_model: str = "deepseek/deepseek-reasoner"
+    generation_model: str = "deepseek/deepseek-chat"
     default_temperature: float = 0.7
     default_max_tokens: int = 4096
     api_keys: dict[str, str] = {}
 
-    # 密钥来源标识: "user" 或 "platform"
     key_source: str = "platform"
+
+    # 所有已知 provider 的 API 密钥环境变量名
+    _KNOWN_KEY_VARS: list[str] = [
+        # 国产模型
+        "DEEPSEEK_API_KEY",
+        "GLM_API_KEY",
+        "DASHSCOPE_API_KEY",
+        # 海外模型
+        "ANTHROPIC_API_KEY",
+        "OPENAI_API_KEY",
+        "GOOGLE_API_KEY",
+        "AZURE_API_KEY",
+    ]
 
     @classmethod
     def from_env(cls) -> LLMConfig:
         """
         从环境变量构建 LLM 配置。
 
-        读取以下环境变量：
-        - REASONING_MODEL: 推理模型标识
-        - GENERATION_MODEL: 生成模型标识
-        - DEFAULT_TEMPERATURE: 默认采样温度
-        - DEFAULT_MAX_TOKENS: 默认最大 token 数
-        - ANTHROPIC_API_KEY: Anthropic API 密钥
-        - OPENAI_API_KEY: OpenAI API 密钥
-
-        返回:
-            从环境变量填充的 LLMConfig 实例
+        支持的模型示例：
+        - DeepSeek: deepseek/deepseek-chat, deepseek/deepseek-reasoner
+        - 智谱 GLM: zai/glm-4, zai/glm-4.5
+        - 通义千问: dashscope/qwen-max, dashscope/qwen-plus
+        - Anthropic: anthropic/claude-sonnet-4-20250514
+        - OpenAI: openai/gpt-4o
         """
-        # 收集所有已知 provider 的 API 密钥
         api_keys: dict[str, str] = {}
-
-        # 遍历已知的 provider 密钥环境变量名
-        known_key_vars = [
-            "ANTHROPIC_API_KEY",
-            "OPENAI_API_KEY",
-            "GOOGLE_API_KEY",
-            "AZURE_API_KEY",
-        ]
-        for var_name in known_key_vars:
+        for var_name in cls._KNOWN_KEY_VARS:
             value = os.environ.get(var_name, "")
             if value:
                 api_keys[var_name] = value
 
-        # 读取模型配置，未设置时使用默认值
         reasoning_model = os.environ.get(
             "REASONING_MODEL",
-            "anthropic/claude-sonnet-4-20250514",
+            "deepseek/deepseek-reasoner",
         )
         generation_model = os.environ.get(
             "GENERATION_MODEL",
-            "anthropic/claude-sonnet-4-20250514",
+            "deepseek/deepseek-chat",
         )
 
         # 读取默认参数

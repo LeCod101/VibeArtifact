@@ -38,14 +38,19 @@ class LLMRequest(BaseModel):
         temperature: 采样温度，控制输出随机性
         max_tokens: 最大生成 token 数
         response_format: JSON schema，structured output 时使用
+        tools: OpenAI function calling 格式的工具列表
+        tool_choice: 工具选择策略，"auto" / "none" / "required"
         metadata: 透传元数据，如 agent_id、project_id 等
     """
 
-    messages: list[LLMMessage]
+    messages: list[LLMMessage] = []
+    raw_messages: list[dict[str, Any]] | None = None
     model: str
     temperature: float = 0.7
     max_tokens: int = 4096
     response_format: dict | None = None
+    tools: list[dict[str, Any]] | None = None
+    tool_choice: str | None = None
     metadata: dict[str, Any] = {}
 
 
@@ -64,6 +69,14 @@ class LLMUsage(BaseModel):
     total_tokens: int = 0
 
 
+class LLMToolCall(BaseModel):
+    """LLM 返回的工具调用信息。"""
+
+    id: str
+    function_name: str
+    function_arguments: str
+
+
 class LLMResponse(BaseModel):
     """
     统一 LLM 调用响应。
@@ -78,6 +91,7 @@ class LLMResponse(BaseModel):
         usage: token 用量统计
         latency_ms: 调用耗时（毫秒）
         cost: 本次调用成本（美元）
+        tool_calls: 模型返回的工具调用列表
         raw_response: 原始响应，调试用
     """
 
@@ -87,4 +101,5 @@ class LLMResponse(BaseModel):
     usage: LLMUsage = LLMUsage()
     latency_ms: float = 0.0
     cost: float = 0.0
+    tool_calls: list[LLMToolCall] | None = None
     raw_response: dict | None = None

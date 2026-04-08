@@ -12,7 +12,6 @@ from collections.abc import AsyncGenerator
 from typing import Any
 from uuid import UUID
 
-from platform_data.models.artifact import Artifact
 from platform_data.models.conversation import Message
 from platform_data.models.user import User
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -24,11 +23,7 @@ from api_app.application.services.settings_service import SettingsService
 
 logger = logging.getLogger(__name__)
 
-# 加载历史消息的默认条数
 _HISTORY_LIMIT = 20
-
-# 工具结果中标识 artifact 创建的类型集合
-_ARTIFACT_TOOL_TYPES = {"code", "document", "diagram", "database_schema"}
 
 
 class AgentService:
@@ -52,26 +47,14 @@ class AgentService:
         """处理用户消息的完整流程，以 SSE 事件流形式返回。
 
         流程：
-        1. 保存用户消息到 messages 表
-        2. 加载对话历史（最近 N 条消息）
+        1. 保存用户消息
+        2. 加载对话历史（排除刚保存的用户消息，由 Agent 自行追加）
         3. 构建项目上下文
-        4. 构建 LLMConfig（优先用户 Key，回退平台 Key）
-        5. 调用 VibeArtifactAgent.chat()
-        6. 逐个 yield SSE 事件
-        7. Agent 回复完毕后，保存助手消息
-        8. 处理工具结果中的 artifact 创建
-
-        参数:
-            project_id: 项目 UUID
-            conversation_id: 对话 UUID
-            user_message: 用户输入文本
-            user: 当前认证用户
-            mode: 运行模式（auto / discussion / thinking）
-
-        Yields:
-            SSE 格式的事件字符串（data: {json}\n\n）
+        4. 构建 Agent（含 ToolContext 和 CostTracker）
+        5. 调用 Agent.chat() 并流式返回
+        6. 保存助手消息
         """
-        # ── 步骤 1: 保存用户消息并提交（确保消息不会因后续异常丢失）──
+        # ── 步骤 1: 保存用户消息 ──
         await self._msg_service.save_message(
             conversation_id=conversation_id,
             role="user",
@@ -79,21 +62,28 @@ class AgentService:
         )
         await self.db.commit()
 
-        # ── 步骤 2: 加载对话历史 ──
+        # ── 步骤 2: 加载对话历史（排除最新一条，避免与 agent.chat 重复） ──
         history_messages = await self._msg_service.list_recent(
             conversation_id=conversation_id,
-            limit=_HISTORY_LIMIT,
+            limit=_HISTORY_LIMIT + 1,
         )
+        # 去掉列表末尾刚保存的用户消息（list_recent 按时间升序，最新在末尾）
+        if (
+            history_messages
+            and history_messages[-1].role.value == "user"
+            and history_messages[-1].content == user_message
+        ):
+            history_messages = history_messages[:-1]
         conversation_history = self._build_openai_history(history_messages)
 
         # ── 步骤 3: 构建项目上下文 ──
         project = await self._project_service.get_project(project_id)
         project_context = self._build_project_context(project)
 
-        # ── 步骤 4: 构建 LLMConfig 并创建 Agent ──
-        agent = await self._create_agent(user)
+        # ── 步骤 4: 创建 Agent ──
+        agent = await self._create_agent(user, project_id)
 
-        # ── 步骤 5-6: 调用 Agent 并流式返回 SSE 事件 ──
+        # ── 步骤 5-6: 调用 Agent 并流式返回 ──
         full_content = ""
         tool_calls_log: list[dict[str, Any]] = []
         artifacts_created: list[str] = []
@@ -114,16 +104,11 @@ class AgentService:
                 if event_type == "tool_call":
                     tool_calls_log.append(event_data)
 
-                # 从工具结果中检测 artifact 创建
+                # 工具现在内部创建 Artifact，直接读取 artifact_id
                 if event_type == "tool_result":
-                    artifact_id = await self._handle_tool_result(
-                        project_id=project_id,
-                        tool_name=event_data.get("tool", ""),
-                        result=event_data.get("result", {}),
-                    )
+                    artifact_id = self._extract_artifact_id(event_data)
                     if artifact_id:
-                        artifacts_created.append(str(artifact_id))
-                        event_data["artifact_id"] = str(artifact_id)
+                        artifacts_created.append(artifact_id)
 
                 yield self._format_sse(event)
 
@@ -149,19 +134,15 @@ class AgentService:
 
         await self.db.commit()
 
-    async def _create_agent(self, user: User) -> Any:
-        """构建 LLMConfig 并创建 VibeArtifactAgent 实例。
-
-        优先使用用户的 API Key，回退到平台配置。
-        """
+    async def _create_agent(self, user: User, project_id: UUID) -> Any:
+        """构建 Agent 实例，注入 LLM Provider、CostTracker 和 ToolContext。"""
         from agents.agent import VibeArtifactAgent
+        from agents.tools.context import ToolContext
+        from runtime_tools.cost.tracker import CostTracker
         from runtime_tools.llm.config import LLMConfig
         from runtime_tools.llm.provider import LiteLLMProvider
 
-        # 获取用户自定义 API Key
         user_keys = await self._settings_service.get_user_api_keys_decrypted(user.id)
-
-        # 获取用户模型偏好
         pref = await self._settings_service.get_model_preference(user.id)
 
         config = LLMConfig.from_user(
@@ -171,43 +152,29 @@ class AgentService:
         )
 
         provider = LiteLLMProvider(config=config)
-        return VibeArtifactAgent(llm_provider=provider)
+        cost_tracker = CostTracker()
+        tool_context = ToolContext(
+            db=self.db,
+            project_id=project_id,
+            user_id=user.id,
+        )
 
-    async def _handle_tool_result(
-        self,
-        project_id: UUID,
-        tool_name: str,
-        result: dict[str, Any],
-    ) -> UUID | None:
-        """从工具结果中检测并创建 Artifact。
+        return VibeArtifactAgent(
+            llm_provider=provider,
+            cost_tracker=cost_tracker,
+            tool_context=tool_context,
+        )
 
-        当 result.data 包含 artifact_type 且在支持的类型中时，
-        创建 Artifact 记录并返回其 ID。
-        """
+    @staticmethod
+    def _extract_artifact_id(event_data: dict[str, Any]) -> str | None:
+        """从 tool_result 事件中提取 artifact_id（工具内部创建的）。"""
+        result = event_data.get("result", {})
         if not result.get("success"):
             return None
-
         data = result.get("data", {})
         if not isinstance(data, dict):
             return None
-
-        artifact_type = data.get("artifact_type", "")
-        if artifact_type not in _ARTIFACT_TOOL_TYPES:
-            return None
-
-        artifact = Artifact(
-            project_id=project_id,
-            artifact_type=artifact_type,
-            title=data.get("title", f"由 {tool_name} 生成"),
-            content=data.get("content", ""),
-            file_path=data.get("file_path"),
-            language=data.get("language"),
-        )
-        self.db.add(artifact)
-        await self.db.flush()
-        await self.db.refresh(artifact)
-
-        return artifact.id
+        return data.get("artifact_id")
 
     @staticmethod
     def _build_openai_history(messages: list[Message]) -> list[dict[str, Any]]:
@@ -229,13 +196,15 @@ class AgentService:
             "project_id": str(project.id),
             "project_name": project.name,
             "project_type": project.project_type,
-            "tech_requirements": project.tech_requirements or "",
+            # Agent 期望的字段名
+            "tech_stacks": project.tech_requirements or "",
+            "coding_standards": "",
             "course_name": project.course_name or "",
         }
 
     @staticmethod
     def _format_sse(event: dict[str, Any]) -> str:
-        """将事件字典格式化为 SSE 文本（含 event: 前缀供 EventSource 分发）。"""
+        """将事件字典格式化为 SSE 文本。"""
         event_type = event.get("event", "message")
         data_payload = json.dumps(event.get("data", {}), ensure_ascii=False)
         return f"event: {event_type}\ndata: {data_payload}\n\n"

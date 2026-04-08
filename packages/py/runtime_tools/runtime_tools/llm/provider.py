@@ -10,12 +10,24 @@ from __future__ import annotations
 import logging
 import time
 from abc import ABC, abstractmethod
-from typing import Callable
+from typing import Any, Callable
 
 from .config import LLMConfig
-from .schemas import LLMRequest, LLMResponse, LLMUsage
+from .schemas import LLMRequest, LLMResponse, LLMToolCall, LLMUsage
 
 logger = logging.getLogger(__name__)
+
+_PROVIDER_ENV_MAP: dict[str, str] = {
+    # 国产模型
+    "deepseek": "DEEPSEEK_API_KEY",
+    "zai": "GLM_API_KEY",
+    "dashscope": "DASHSCOPE_API_KEY",
+    # 海外模型
+    "anthropic": "ANTHROPIC_API_KEY",
+    "openai": "OPENAI_API_KEY",
+    "google": "GOOGLE_API_KEY",
+    "azure": "AZURE_API_KEY",
+}
 
 
 class BaseLLMProvider(ABC):
@@ -23,19 +35,19 @@ class BaseLLMProvider(ABC):
     LLM 调用的抽象基类。
 
     所有 LLM Provider 实现都必须继承此类，
-    并实现 complete 方法。
+    并实现 complete 和 complete_raw 方法。
     """
 
     @abstractmethod
     async def complete(self, request: LLMRequest) -> LLMResponse:
-        """
-        调用 LLM 并返回响应。
+        """调用 LLM 并返回统一响应。"""
+        ...
 
-        Args:
-            request: 统一的 LLM 调用请求
+    @abstractmethod
+    async def complete_raw(self, request: LLMRequest) -> Any:
+        """调用 LLM 并返回原始响应对象（含 choices[0].message 结构）。
 
-        Returns:
-            统一的 LLM 调用响应
+        供 Agent 工具循环使用，需要完整的 tool_calls 信息。
         """
         ...
 
@@ -53,72 +65,77 @@ class LiteLLMProvider(BaseLLMProvider):
         config: LLMConfig | None = None,
         usage_callback: Callable[[LLMResponse], None] | None = None,
     ):
-        """
-        初始化 LiteLLM Provider。
-
-        参数:
-            config: LLM 配置，为 None 时从环境变量自动读取
-            usage_callback: 用量回调函数，每次 LLM 调用后回调（可选）
-        """
         self.config = config or LLMConfig.from_env()
         self._usage_callback = usage_callback
 
-    async def complete(self, request: LLMRequest) -> LLMResponse:
-        """
-        调用 LiteLLM completion API。
+    def _build_kwargs(self, request: LLMRequest) -> dict[str, Any]:
+        """从 LLMRequest 构建 litellm.acompletion 参数字典。"""
+        # raw_messages 优先（工具循环中包含 tool/assistant+tool_calls 等复杂角色）
+        if request.raw_messages is not None:
+            msgs = request.raw_messages
+        else:
+            msgs = [m.model_dump() for m in request.messages]
 
-        执行流程：
-        1. 构建 LiteLLM 调用参数
-        2. 调用 litellm.acompletion 异步接口
-        3. 记录 token 用量、成本、耗时
-        4. 包装为 LLMResponse 返回
-
-        Args:
-            request: 统一的 LLM 调用请求
-
-        Returns:
-            包含内容、用量、耗时等信息的统一响应
-        """
-        # 延迟导入 litellm，避免未安装时影响其他模块
-        import litellm
-
-        # 构建调用参数
-        kwargs: dict = {
+        kwargs: dict[str, Any] = {
             "model": request.model,
-            "messages": [m.model_dump() for m in request.messages],
+            "messages": msgs,
             "temperature": request.temperature,
             "max_tokens": request.max_tokens,
         }
 
-        # 仅在指定 response_format 时传入
         if request.response_format is not None:
             kwargs["response_format"] = request.response_format
 
-        # 如果配置中有对应 provider 的 API Key，直接传给 litellm
+        if request.tools:
+            kwargs["tools"] = request.tools
+        if request.tool_choice:
+            kwargs["tool_choice"] = request.tool_choice
+
         model_provider = request.model.split("/")[0] if "/" in request.model else ""
-        provider_env_map = {
-            "anthropic": "ANTHROPIC_API_KEY",
-            "openai": "OPENAI_API_KEY",
-            "google": "GOOGLE_API_KEY",
-            "azure": "AZURE_API_KEY",
-        }
-        env_var = provider_env_map.get(model_provider, "")
+        env_var = _PROVIDER_ENV_MAP.get(model_provider, "")
         if env_var and env_var in self.config.api_keys:
             kwargs["api_key"] = self.config.api_keys[env_var]
 
-        # 记录开始时间
+        return kwargs
+
+    async def complete_raw(self, request: LLMRequest) -> Any:
+        """调用 litellm 并返回原始响应。
+
+        供 Agent 工具调用循环使用，保留完整的
+        ``choices[0].message.tool_calls`` 结构。
+        """
+        import litellm
+
+        kwargs = self._build_kwargs(request)
+        return await litellm.acompletion(**kwargs)
+
+    async def complete(self, request: LLMRequest) -> LLMResponse:
+        """调用 litellm 并返回统一封装的 LLMResponse。"""
+        import litellm
+
+        kwargs = self._build_kwargs(request)
         start = time.monotonic()
-
-        # 调用 LiteLLM 异步接口
         response = await litellm.acompletion(**kwargs)
-
-        # 计算耗时（毫秒）
         elapsed_ms = (time.monotonic() - start) * 1000
 
-        # 提取响应内容
-        content = response.choices[0].message.content or ""
+        choice = response.choices[0] if response.choices else None
+        msg = choice.message if choice else None
 
-        # 提取 token 用量
+        content = getattr(msg, "content", "") or ""
+
+        # 提取 tool_calls
+        raw_tool_calls = getattr(msg, "tool_calls", None)
+        tool_calls: list[LLMToolCall] | None = None
+        if raw_tool_calls:
+            tool_calls = [
+                LLMToolCall(
+                    id=tc.id,
+                    function_name=tc.function.name,
+                    function_arguments=tc.function.arguments,
+                )
+                for tc in raw_tool_calls
+            ]
+
         usage = response.usage
         llm_usage = LLMUsage(
             prompt_tokens=getattr(usage, "prompt_tokens", 0),
@@ -126,7 +143,6 @@ class LiteLLMProvider(BaseLLMProvider):
             total_tokens=getattr(usage, "total_tokens", 0),
         )
 
-        # 提取 provider 信息和成本
         hidden_params = getattr(response, "_hidden_params", {}) or {}
         provider_name = hidden_params.get("custom_llm_provider", "")
         response_cost = hidden_params.get("response_cost", 0.0)
@@ -138,9 +154,9 @@ class LiteLLMProvider(BaseLLMProvider):
             usage=llm_usage,
             latency_ms=elapsed_ms,
             cost=response_cost,
+            tool_calls=tool_calls,
         )
 
-        # 调用用量回调（如果配置了）
         if self._usage_callback is not None:
             try:
                 self._usage_callback(llm_response)
