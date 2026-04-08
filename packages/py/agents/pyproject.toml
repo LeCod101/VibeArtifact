@@ -1,16 +1,15 @@
 [project]
 name = "agents"
-version = "0.1.0"
-description = "Agent configs, prompts, translators, executors"
+version = "0.2.0"
+description = "Single Agent + Tools architecture for VibeArtifact"
 requires-python = ">=3.12"
 dependencies = [
     "pydantic>=2.0",
-    "ir-core",
     "runtime-tools",
+    "litellm>=1.0.0",
 ]
 
 [tool.uv.sources]
-ir-core = { workspace = true }
 runtime-tools = { workspace = true }
 
 [project.optional-dependencies]
