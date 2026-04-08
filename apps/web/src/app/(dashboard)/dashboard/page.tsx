@@ -77,7 +77,7 @@ export default function DashboardPage() {
       });
       setInputValue("");
       toast.success(L(t.project.createSuccess, locale));
-      router.push(`/projects/${project.id}`);
+      router.push(`/project/${project.id}`);
     } catch (err) {
       const msg =
         err instanceof ApiError ? err.detail : L(t.common.error, locale);
@@ -208,7 +208,7 @@ export default function DashboardPage() {
                 <Card
                   key={project.id}
                   className="cursor-pointer transition-all duration-200 hover:shadow-md hover:border-foreground/15"
-                  onClick={() => router.push(`/projects/${project.id}`)}
+                  onClick={() => router.push(`/project/${project.id}`)}
                 >
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between mb-2">

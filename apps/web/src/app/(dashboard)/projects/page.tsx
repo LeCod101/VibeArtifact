@@ -139,7 +139,7 @@ export default function ProjectsListPage() {
             <Card
               key={project.id}
               className="cursor-pointer transition-all duration-200 hover:shadow-md hover:border-foreground/15"
-              onClick={() => router.push(`/projects/${project.id}`)}
+              onClick={() => router.push(`/project/${project.id}`)}
             >
               <CardContent className="p-5">
                 <div className="flex items-start justify-between mb-2">

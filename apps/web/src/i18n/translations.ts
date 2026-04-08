@@ -41,34 +41,31 @@ const translations = {
 
   // Interactive showcase
   interactive: {
-    engineTitle: { zh: "合成引擎", en: "Synthesis Engine" },
-    engineSub: { zh: "自主工程化", en: "Autonomous Engineering" },
+    engineTitle: { zh: "AI 对话助手", en: "AI Coding Agent" },
+    engineSub: { zh: "对话式迭代开发", en: "Conversational Iteration" },
     tabs: {
-      zh: ["需求解码", "架构合成", "资产交付"],
-      en: ["Decode", "Synthesize", "Deliver"],
+      zh: ["描述需求", "Agent 思考与工具调用", "产物生成与预览"],
+      en: ["Describe", "Think & Tool Calls", "Generate & Preview"],
     },
     statusLabel: {
-      zh: "引擎实时处理中",
-      en: "Engine processing live",
+      zh: "Agent 实时处理中",
+      en: "Agent processing live",
     },
-    // Step 01
-    step01Label: { zh: "解码意图", en: "Decode Intent" },
+    step01Label: { zh: "描述需求", en: "Describe Your Need" },
     step01Input: {
-      zh: "构建一个支持 Stripe 支付、RBAC 权限和实时库存推送的跨境电商平台。",
-      en: "Build a cross-border e-commerce platform with Stripe payments, RBAC permissions, and real-time inventory push.",
+      zh: "帮我实现一个支持 Stripe 支付、RBAC 权限和实时库存推送的跨境电商平台。",
+      en: "Help me build a cross-border e-commerce platform with Stripe payments, RBAC permissions, and real-time inventory push.",
     },
-    identifyEntities: { zh: "识别业务实体", en: "Identify Business Entities" },
-    identifyServices: { zh: "识别三方服务", en: "Identify Third-party Services" },
-    // Step 02
-    step02Label: { zh: "架构推演", en: "Architecture Synthesis" },
-    archDiagram: { zh: "微服务架构图谱", en: "Microservice Architecture Graph" },
-    ermTitle: { zh: "实体关系模型", en: "Entity Relational Model" },
+    identifyEntities: { zh: "分析需求要素", en: "Analyze Requirements" },
+    identifyServices: { zh: "识别技术依赖", en: "Identify Tech Dependencies" },
+    step02Label: { zh: "Agent 思考与工具调用", en: "Agent Thinking & Tool Calls" },
+    archDiagram: { zh: "生成架构方案", en: "Generate Architecture" },
+    ermTitle: { zh: "调用工具生成代码", en: "Tool Call: Code Generation" },
     ermDesc: {
-      zh: "正在处理 Schema 关系...",
-      en: "Processing Schema relationships...",
+      zh: "Agent 正在调用工具...",
+      en: "Agent calling tools...",
     },
-    // Step 03
-    step03Label: { zh: "系统构建交付", en: "System Build & Delivery" },
+    step03Label: { zh: "产物生成与预览", en: "Artifact Generation & Preview" },
   },
 
   // Capabilities
@@ -231,13 +228,13 @@ const translations = {
   // Footer
   footer: {
     desc: {
-      zh: "全球首个真正意义上的由 AI 驱动的全栈系统合成引擎。告别代码搬运，拥抱自动生成式工程。",
-      en: "The world's first truly AI-driven full-stack system synthesis engine. Stop moving code, embrace generative engineering.",
+      zh: "对话式 AI 编程助手，通过自然语言对话逐步迭代你的项目。一个 Agent，全部搞定。",
+      en: "Conversational AI coding assistant that iterates your project through natural language. One Agent, everything covered.",
     },
     ecosystem: { zh: "产品生态", en: "Ecosystem" },
     ecosystemItems: {
-      zh: ["合成引擎 API", "基础设施部署", "企业私有化"],
-      en: ["Synthesis Engine API", "Infra Deployment", "Enterprise Private"],
+      zh: ["Agent API", "基础设施部署", "企业私有化"],
+      en: ["Agent API", "Infra Deployment", "Enterprise Private"],
     },
     developers: { zh: "开发者", en: "Developers" },
     developerItems: {

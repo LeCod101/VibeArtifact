@@ -6,8 +6,10 @@ import logging
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import FileResponse
 from platform_data.models.artifact import ArtifactExport
 from platform_data.models.user import User
+from runtime_tools.exporters.storage import get_zip_path
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -34,7 +36,7 @@ async def trigger_export(
 ) -> ExportResponse:
     """触发项目产物导出。
 
-    当前为同步创建导出记录，后续可接入 Celery 异步任务。
+    创建导出记录后派发 Celery 异步任务进行 ZIP 打包。
 
     参数：
         project_id: 项目 UUID
@@ -63,33 +65,20 @@ async def trigger_export(
     await db.commit()
     await db.refresh(export_record)
 
-    # TODO: 此处应发送 Celery 任务来异步打包产物
+    from worker_app.tasks.export_project import export_project as export_project_task
+
+    export_project_task.delay(str(export_record.id), str(project_id), body.export_type)
 
     return export_record  # type: ignore[return-value]
 
 
-@router.get(
-    "/exports/{export_id}/download",
-    response_model=ExportResponse,
-)
+@router.get("/exports/{export_id}/download")
 async def download_export(
     export_id: UUID,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-) -> ExportResponse:
-    """获取导出记录（含下载地址）。
-
-    参数：
-        export_id: 导出记录 UUID
-        current_user: 当前认证用户
-        db: 异步数据库会话
-
-    返回：
-        导出记录详情
-
-    异常：
-        404: 导出记录不存在或无权访问
-    """
+):
+    """下载已完成导出的 ZIP；处理中返回 202，文件缺失返回 404。"""
     result = await db.execute(
         select(ArtifactExport).where(ArtifactExport.id == export_id),
     )
@@ -116,4 +105,15 @@ async def download_export(
             detail="导出正在处理中，请稍后重试",
         )
 
-    return export_record  # type: ignore[return-value]
+    zip_path = get_zip_path(str(export_id))
+    if zip_path is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="导出文件不存在",
+        )
+
+    return FileResponse(
+        path=str(zip_path),
+        media_type="application/zip",
+        filename=f"project-{export_record.project_id}.zip",
+    )

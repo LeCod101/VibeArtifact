@@ -1,7 +1,7 @@
 /**
- * 公开首页 - Claude 暖色风格 + 合成引擎交互展示
+ * 公开首页 - 暖色风格 + AI Agent 交互展示
  *
- * 暖米色背景，居中品牌标语 + CTA，下方合成引擎三步骤动态展示。
+ * 暖米色背景，居中品牌标语 + CTA，下方 Agent 三步骤动态展示。
  */
 "use client";
 
@@ -34,12 +34,12 @@ function L(obj: { zh: any; en: any }, locale: Locale) {
 /** 页面文案 */
 const copy = {
   tagline: {
-    zh: "AI Product Engineering OS",
-    en: "AI Product Engineering OS",
+    zh: "AI-Powered Vibe Coding Assistant",
+    en: "AI-Powered Vibe Coding Assistant",
   },
   subtitle: {
-    zh: "用一句话，自动生成全栈系统",
-    en: "Generate full-stack systems from a single sentence",
+    zh: "对话式 AI 编程助手，逐步迭代你的项目",
+    en: "Conversational AI coding assistant that iterates with you",
   },
   ctaPrimary: {
     zh: "开始使用",

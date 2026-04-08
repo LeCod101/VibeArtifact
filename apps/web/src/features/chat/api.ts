@@ -1,7 +1,7 @@
 /**
- * Chat API Hooks - 对话和消息相关的 React Query hooks
+ * Chat API Hooks - v2 对话相关的 React Query hooks
  *
- * 提供对话列表、创建对话、消息列表、发送消息的 query 和 mutation。
+ * 对接 Phase 2：列表/创建对话与拉取历史消息；发送消息由 SSE（use-agent-sse 等）完成。
  */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiGet, apiPost } from "@/lib/api-client";
@@ -9,13 +9,10 @@ import type {
   CreateConversationRequest,
   ConversationResponse,
   MessageResponse,
-  SendMessageRequest,
-  SendMessageResponse,
 } from "@/lib/api-client/types";
 
 /**
  * 获取项目下的对话列表
- * @param projectId - 项目 UUID
  */
 export function useConversationsQuery(projectId: string) {
   return useQuery({
@@ -29,10 +26,7 @@ export function useConversationsQuery(projectId: string) {
 }
 
 /**
- * 创建对话 mutation
- *
- * 创建成功后自动刷新对话列表缓存。
- * @param projectId - 项目 UUID
+ * 创建对话 mutation（成功后刷新该项目下的对话列表）
  */
 export function useCreateConversationMutation(projectId: string) {
   const queryClient = useQueryClient();
@@ -52,8 +46,7 @@ export function useCreateConversationMutation(projectId: string) {
 }
 
 /**
- * 获取对话下的消息列表
- * @param conversationId - 对话 UUID
+ * 获取对话消息列表
  */
 export function useMessagesQuery(conversationId: string | null) {
   return useQuery({
@@ -63,31 +56,5 @@ export function useMessagesQuery(conversationId: string | null) {
         `/api/v1/conversations/${conversationId}/messages`
       ),
     enabled: !!conversationId,
-  });
-}
-
-/**
- * 发送消息 mutation（对话模式）
- *
- * 调用 POST /conversations/{id}/messages 发送用户消息，
- * 后端会自动触发 Agent 处理并返回助手回复 + 变更摘要。
- * 发送成功后自动刷新消息列表缓存。
- *
- * @param conversationId - 对话 UUID
- */
-export function useSendMessageMutation(conversationId: string) {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (data: SendMessageRequest) =>
-      apiPost<SendMessageResponse>(
-        `/api/v1/conversations/${conversationId}/messages`,
-        data
-      ),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["messages", conversationId],
-      });
-    },
   });
 }

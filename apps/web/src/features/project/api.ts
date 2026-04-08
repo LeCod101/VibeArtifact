@@ -13,11 +13,14 @@ import type {
 
 /**
  * 获取项目列表
+ * @param projectType - 可选，按 project_type 筛选
  */
-export function useProjectsQuery() {
+export function useProjectsQuery(projectType?: string) {
+  const params = projectType ? `?project_type=${encodeURIComponent(projectType)}` : "";
   return useQuery({
-    queryKey: ["projects"],
-    queryFn: () => apiGet<ProjectResponse[]>("/api/v1/projects"),
+    queryKey: ["projects", projectType],
+    queryFn: () =>
+      apiGet<ProjectResponse[]>(`/api/v1/projects${params}`),
   });
 }
 

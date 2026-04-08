@@ -7,7 +7,15 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, FolderOpen, LayoutTemplate, Settings, LogOut, Languages } from "lucide-react";
+import {
+  LayoutDashboard,
+  FolderOpen,
+  FolderPlus,
+  LayoutTemplate,
+  Settings,
+  LogOut,
+  Languages,
+} from "lucide-react";
 import { useLocale } from "@/i18n/context";
 import t from "@/i18n/translations";
 import type { Locale } from "@/i18n/translations";
@@ -31,6 +39,7 @@ function L(obj: { zh: any; en: any }, locale: Locale) {
 const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: { zh: "仪表盘", en: "Dashboard" } },
   { href: "/projects", icon: FolderOpen, label: { zh: "项目", en: "Projects" } },
+  { href: "/project/new", icon: FolderPlus, label: { zh: "新建项目", en: "New project" } },
   { href: "/templates", icon: LayoutTemplate, label: { zh: "模板", en: "Templates" } },
 ];
 
@@ -67,7 +76,15 @@ export function Sidebar() {
       <nav className="flex flex-col items-center gap-1">
         {navItems.map((item) => {
           const Icon = item.icon;
-          const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+          const projectsArea =
+            item.href === "/projects" &&
+            (pathname.startsWith("/projects") ||
+              (pathname.startsWith("/project/") &&
+                !pathname.startsWith("/project/new")));
+          const isActive =
+            pathname === item.href ||
+            pathname.startsWith(item.href + "/") ||
+            projectsArea;
           return (
             <Link
               key={item.href}

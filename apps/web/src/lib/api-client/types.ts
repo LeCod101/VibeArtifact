@@ -1,7 +1,7 @@
 /**
  * API 类型定义 - 镜像后端 Pydantic schema
  *
- * 包含所有 M1 后端 API 的请求和响应类型定义。
+ * 包含后端 API 的请求和响应类型定义（含 v2 单 Agent + 工具集模型）。
  */
 
 /* ============ 认证相关 ============ */
@@ -46,6 +46,8 @@ export interface UserResponse {
 export interface CreateProjectRequest {
   name: string;
   description?: string;
+  /** 项目类型（如 homework / thesis / personal） */
+  project_type?: string;
 }
 
 /** 项目信息响应 */
@@ -57,6 +59,9 @@ export interface ProjectResponse {
   status: string;
   created_at: string;
   updated_at: string;
+  project_type?: string;
+  course_name?: string | null;
+  tech_requirements?: string | null;
 }
 
 /* ============ 对话相关 ============ */
@@ -73,7 +78,6 @@ export interface ConversationResponse {
   title: string | null;
   mode: string;
   status: string;
-  active_branch_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -86,51 +90,138 @@ export interface SaveMessageRequest {
   content: string;
 }
 
+/** 工具调用信息（消息中嵌入，与 SSE tool_call 对齐） */
+export interface ToolCallInfo {
+  tool_name: string;
+  arguments: Record<string, unknown>;
+  result?: unknown;
+}
+
 /** 消息信息响应 */
 export interface MessageResponse {
   id: string;
   conversation_id: string;
-  branch_id: string;
   role: string;
   content: string;
   content_type: string;
   created_at: string;
-  /** 消息执行前的快照 ID */
-  snapshot_before_id?: string | null;
-  /** 消息执行后的快照 ID */
-  snapshot_after_id?: string | null;
-  /** 变更摘要（仅 assistant 消息可能携带） */
-  change_summary?: ChangeSummaryResponse;
+  tool_calls?: ToolCallInfo[];
+  artifacts_created?: string[];
 }
 
-/* ============ 对话模式相关 ============ */
+/* ============ 对话模式 / 兼容非流式发送（若后端仍提供） ============ */
 
 /** 发送消息请求 */
 export interface SendMessageRequest {
   content: string;
 }
 
-/** 变更摘要 */
-export interface ChangeSummaryResponse {
-  summary: string;
-  affected_areas: string[];
-  operations_count: number;
-  agents_executed: string[];
-  new_snapshot_id: string | null;
-  warnings: string[];
-}
-
-/** 发送消息响应（含助手回复 + 变更摘要） */
+/** 发送消息响应（助手回复，无变更摘要） */
 export interface SendMessageResponse {
   user_message: MessageResponse;
   assistant_message: MessageResponse;
-  change_summary: ChangeSummaryResponse;
 }
 
-/** 对话 SSE 事件数据 */
+/** 对话 SSE 事件数据（旧字段名保留，供非 Agent 流复用） */
 export interface ChatSSEEvent {
   event: string;
   data: Record<string, unknown>;
+}
+
+/* ============ Agent v2：模式、SSE、Chat、产物 ============ */
+
+/** Agent 运行模式 */
+export type AgentMode = "auto" | "discussion" | "thinking";
+
+/** Agent SSE 事件类型 */
+export type SSEEventType =
+  | "thinking"
+  | "tool_call"
+  | "tool_result"
+  | "content"
+  | "error"
+  | "done";
+
+/** Agent SSE 单条事件 */
+export interface AgentSSEEvent {
+  event: SSEEventType;
+  data: Record<string, unknown>;
+}
+
+/** 产物类型 */
+export type ArtifactType =
+  | "code"
+  | "document"
+  | "diagram"
+  | "sql"
+  | "config"
+  | "other";
+
+/** 产物详情响应（对齐后端 ArtifactResponse） */
+export interface ArtifactResponseV2 {
+  id: string;
+  project_id: string;
+  artifact_type: ArtifactType;
+  title: string;
+  content: string;
+  file_path: string | null;
+  language: string | null;
+  version_num: number;
+  parent_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+/** 产物列表项（对齐后端 ArtifactListItem，不含 content） */
+export interface ArtifactListItem {
+  id: string;
+  project_id: string;
+  artifact_type: ArtifactType;
+  title: string;
+  file_path: string | null;
+  language: string | null;
+  version_num: number;
+  parent_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+/** 产物版本历史项（对齐后端 ArtifactVersionResponse） */
+export interface ArtifactVersionItem {
+  id: string;
+  version_num: number;
+  title: string;
+  created_at: string;
+}
+
+/** 更新产物请求（对齐后端 ArtifactUpdateRequest） */
+export interface UpdateArtifactRequest {
+  title?: string;
+  content?: string;
+  file_path?: string;
+  language?: string;
+}
+
+/** 导出项目请求（与后端 ExportRequest 对齐） */
+export interface ExportProjectRequest {
+  export_type?: string;
+}
+
+/** 导出任务响应（与后端 ExportResponse 对齐） */
+export interface ExportResponse {
+  id: string;
+  project_id: string;
+  export_type: string;
+  file_url: string | null;
+  file_size_bytes: number | null;
+  created_at: string;
+}
+
+/** Chat 请求（SSE 流式入口） */
+export interface ChatRequest {
+  message: string;
+  mode?: AgentMode;
+  conversation_id?: string;
 }
 
 /* ============ 更新项目 ============ */
@@ -139,151 +230,6 @@ export interface ChatSSEEvent {
 export interface UpdateProjectRequest {
   name?: string;
   description?: string;
-}
-
-/* ============ 快照相关 ============ */
-
-/** 快照信息响应 */
-export interface SnapshotResponse {
-  id: string;
-  project_id: string;
-  version: number;
-  parent_id: string | null;
-  status: string;
-  created_at: string;
-}
-
-/* ============ 产物相关 ============ */
-
-/** 产物信息响应 */
-export interface ArtifactResponse {
-  id: string;
-  project_id: string;
-  snapshot_id: string;
-  name: string;
-  kind: string;
-  content_hash: string | null;
-  created_at: string;
-}
-
-/* ============ 全权委托运行列表 ============ */
-
-/** 全权委托运行列表项 */
-export interface DelegatedRunListItem {
-  run_id: string;
-  status: string;
-  created_at: string | null;
-  completed_at: string | null;
-}
-
-/* ============ 分支相关 ============ */
-
-/** 创建分支请求 */
-export interface CreateBranchRequest {
-  parent_branch_id: string;
-  branch_name?: string;
-  base_snapshot_id?: string;
-}
-
-/** Fork 分支请求 */
-export interface ForkBranchRequest {
-  fork_point_snapshot_id: string;
-  branch_name?: string;
-}
-
-/** 分支信息响应 */
-export interface BranchResponse {
-  id: string;
-  conversation_id: string;
-  parent_branch_id: string | null;
-  base_snapshot_id: string | null;
-  head_snapshot_id: string | null;
-  branch_name: string | null;
-  created_at: string;
-  message_count: number;
-}
-
-/** 分支树节点 */
-export interface BranchTreeNode {
-  branch: BranchResponse;
-  children: BranchTreeNode[];
-}
-
-/** 回滚请求 */
-export interface RollbackRequest {
-  snapshot_id: string;
-}
-
-/** 回滚响应 */
-export interface RollbackResponse {
-  action: "forked" | "switched" | "no_change";
-  switched_branch_id: string;
-  new_branch_id: string | null;
-  snapshot_id: string;
-}
-
-/* ============ 审批相关 ============ */
-
-/** 风险条目 */
-export interface RiskItem {
-  id: string;
-  title: string;
-  description: string;
-  severity: string;
-  status: string;
-  mitigation: string | null;
-}
-
-/** 待决策条目 */
-export interface DecisionItem {
-  id: string;
-  title: string;
-  description: string;
-  status: string;
-  alternatives: string[] | null;
-}
-
-/** 审批历史条目 */
-export interface ApprovalHistoryItem {
-  id: string;
-  action: string;
-  reason: string | null;
-  created_at: string;
-}
-
-/** 审批项响应 — 包含风险、决策和审批历史 */
-export interface ApprovalItemsResponse {
-  run_id: string;
-  status: string;
-  high_risks: RiskItem[];
-  pending_decisions: DecisionItem[];
-  requires_approval: boolean;
-  approval_history: ApprovalHistoryItem[];
-}
-
-/** 审批操作响应 */
-export interface ApprovalActionResponse {
-  success: boolean;
-  action: string;
-  run_id: string;
-  new_status: string;
-  message: string;
-}
-
-/** 批准请求 */
-export interface ApproveRequest {
-  reason?: string;
-}
-
-/** 拒绝请求 */
-export interface RejectRequest {
-  reason?: string;
-}
-
-/** 调整请求 */
-export interface AdjustRequest {
-  feedback: string;
-  reason?: string;
 }
 
 /* ============ 设置相关 ============ */

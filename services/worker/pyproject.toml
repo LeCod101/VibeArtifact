@@ -6,10 +6,18 @@ requires-python = ">=3.12"
 dependencies = [
     "celery>=5.4",
     "redis>=5.0",
+    "sqlalchemy>=2.0",
+    "psycopg[binary]>=3.0",
+    "platform-data",
+    "runtime-tools",
 ]
 
+[tool.uv.sources]
+platform-data = { workspace = true }
+runtime-tools = { workspace = true }
+
 [tool.hatch.build.targets.wheel]
-packages = ["vibeartifact_worker"]
+packages = ["worker_app"]
 
 [build-system]
 requires = ["hatchling"]

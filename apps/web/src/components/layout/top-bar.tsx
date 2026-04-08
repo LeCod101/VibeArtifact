@@ -7,7 +7,16 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Menu, LayoutDashboard, FolderOpen, LayoutTemplate, Settings, LogOut, Languages } from "lucide-react";
+import {
+  Menu,
+  LayoutDashboard,
+  FolderOpen,
+  FolderPlus,
+  LayoutTemplate,
+  Settings,
+  LogOut,
+  Languages,
+} from "lucide-react";
 import { useLocale } from "@/i18n/context";
 import t from "@/i18n/translations";
 import type { Locale } from "@/i18n/translations";

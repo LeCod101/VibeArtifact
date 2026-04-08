@@ -91,6 +91,78 @@ class ArtifactCollector:
 
         return entries
 
+    def collect_from_artifacts(self, artifacts: list) -> FileCollection:
+        """
+        从 Artifact ORM 对象列表收集导出文件。
+
+        依据 artifact_type 映射到 code / doc / diagram 等布局规则，
+        与 collect 相同地在最后统一做路径冲突消解。
+
+        - artifacts: 需具备 artifact_type、title、content、file_path、language 等属性
+        - 返回: FileEntry 列表
+        """
+        entries: FileCollection = []
+
+        for artifact in artifacts:
+            entry = self._extract_artifact(artifact)
+            if entry is not None:
+                entries.append(entry)
+
+        if entries:
+            paths = [e.export_path for e in entries]
+            resolved = resolve_conflicts(paths)
+            for entry, path in zip(entries, resolved):
+                entry.export_path = path
+
+        return entries
+
+    def _extract_artifact(self, artifact) -> FileEntry | None:
+        """
+        将单个 Artifact ORM 对象转为 FileEntry。
+
+        content 为空时跳过；diagram 导出为含 Mermaid 代码块的 Markdown。
+
+        - artifact: ORM 实例或具备同名属性的鸭子类型
+        - 返回: FileEntry 或 None
+        """
+        content = getattr(artifact, "content", "") or ""
+        if not content:
+            return None
+
+        artifact_type = getattr(artifact, "artifact_type", "") or ""
+        file_path = getattr(artifact, "file_path", None) or ""
+        title = getattr(artifact, "title", None) or "untitled"
+
+        if artifact_type == "code":
+            path = file_path or f"{title}.txt"
+            export_path = normalize_path("code", path, self._layout)
+            return FileEntry(export_path=export_path, content=content)
+
+        if artifact_type in ("document", "explanation"):
+            path = file_path or f"{title}.md"
+            export_path = normalize_path("doc", path, self._layout)
+            return FileEntry(export_path=export_path, content=content)
+
+        if artifact_type == "diagram":
+            safe_name = _sanitize_filename(title)
+            export_path = normalize_path("diagram", safe_name, self._layout)
+            md_content = f"# {title}\n\n```mermaid\n{content}\n```\n"
+            return FileEntry(export_path=export_path, content=md_content)
+
+        if artifact_type in ("sql", "database_schema"):
+            path = file_path or f"{title}.sql"
+            export_path = normalize_path("code", path, self._layout)
+            return FileEntry(export_path=export_path, content=content)
+
+        if artifact_type in ("config", "other"):
+            path = file_path or f"{title}.txt"
+            export_path = normalize_path("code", path, self._layout)
+            return FileEntry(export_path=export_path, content=content)
+
+        path = file_path or f"{title}.txt"
+        export_path = normalize_path("code", path, self._layout)
+        return FileEntry(export_path=export_path, content=content)
+
     def _extract_entry(self, node_type: str, props: dict) -> FileEntry | None:
         """
         从单个节点提取文件条目。
