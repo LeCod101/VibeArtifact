@@ -121,10 +121,10 @@ const translations = {
       },
       {
         suffix: { zh: "", en: "" },
-        title: { zh: "内置版本控制", en: "Version Control Built-in" },
+        title: { zh: "产物版本管理", en: "Artifact Versioning" },
         desc: {
-          zh: "基于快照的版本管理，支持分支与合并，永不丢失工作成果。",
-          en: "Snapshot-based versioning with branch and merge. Never lose your work.",
+          zh: "每次修改自动创建新版本，支持版本历史浏览和回溯，永不丢失工作成果。",
+          en: "Auto-versioning on every edit with full history browsing. Never lose your work.",
         },
       },
     ],
@@ -390,39 +390,6 @@ const translations = {
     },
   },
 
-  /* ============ 全权委托 ============ */
-  delegation: {
-    tab: { zh: "全权委托", en: "Delegation" },
-    title: { zh: "全权委托", en: "Full Delegation" },
-    triggerTitle: { zh: "启动全权委托", en: "Launch Delegation" },
-    triggerDesc: {
-      zh: "系统将自动执行完整 Agent 链路，生成前后端代码、数据库、文档与部署配置。",
-      en: "The system will execute the full Agent pipeline to generate frontend/backend code, database, documentation, and deployment configs.",
-    },
-    startBtn: { zh: "开始全权委托", en: "Start Delegation" },
-    historyTitle: { zh: "全权委托历史", en: "Delegation History" },
-    emptyState: { zh: "暂无运行记录", en: "No runs yet" },
-    triggerBtn: { zh: "触发全权委托", en: "Trigger Delegation" },
-    statusRunning: { zh: "运行中", en: "Running" },
-    statusCompleted: { zh: "已完成", en: "Completed" },
-    creating: { zh: "正在创建...", en: "Creating..." },
-    conflictError: {
-      zh: "已有运行中的任务，请等待完成后再试",
-      en: "A run is already in progress. Please wait for it to complete.",
-    },
-    createError: {
-      zh: "创建运行失败，请稍后重试",
-      en: "Failed to create run. Please try again later.",
-    },
-    recentRuns: { zh: "最近运行", en: "Recent Runs" },
-    viewAll: { zh: "查看全部", en: "View All" },
-    noRuns: { zh: "暂无运行记录", en: "No runs yet" },
-    startFirst: {
-      zh: "点击上方按钮开始第一次全权委托",
-      en: "Click the button above to start your first delegation",
-    },
-  },
-
   /* ============ 通用 ============ */
   common: {
     loading: { zh: "加载中...", en: "Loading..." },
@@ -455,104 +422,13 @@ const translations = {
   projectOverview: {
     title: { zh: "项目概览", en: "Project Overview" },
     conversations: { zh: "对话", en: "Conversations" },
-    snapshots: { zh: "快照", en: "Snapshots" },
-    delegationRuns: { zh: "委托运行", en: "Delegation Runs" },
+    artifacts: { zh: "产物", en: "Artifacts" },
     recentActivity: { zh: "最近活动", en: "Recent Activity" },
     noActivity: { zh: "暂无活动记录", en: "No recent activity" },
     quickActions: { zh: "快捷操作", en: "Quick Actions" },
     newConversation: { zh: "新建对话", en: "New Conversation" },
-    startIdeation: { zh: "开始构思", en: "Start Ideation" },
-    fullDelegation: { zh: "全权委托", en: "Full Delegation" },
     editProject: { zh: "编辑项目", en: "Edit Project" },
     saveSuccess: { zh: "项目已更新", en: "Project updated" },
-  },
-
-  /* ============ 委托运行历史页 ============ */
-  runsHistory: {
-    title: { zh: "运行历史", en: "Run History" },
-    runId: { zh: "运行 ID", en: "Run ID" },
-    status: { zh: "状态", en: "Status" },
-    created: { zh: "创建时间", en: "Created" },
-    completed: { zh: "完成时间", en: "Completed" },
-    duration: { zh: "耗时", en: "Duration" },
-    emptyTitle: { zh: "还没有运行记录", en: "No runs yet" },
-    emptyDesc: { zh: "启动全权委托后，运行记录会出现在这里", en: "Run records will appear here after you start a delegation" },
-    statusPending: { zh: "等待中", en: "Pending" },
-    statusRunning: { zh: "运行中", en: "Running" },
-    statusCompleted: { zh: "已完成", en: "Completed" },
-    statusFailed: { zh: "失败", en: "Failed" },
-    statusNeedsAttention: { zh: "需要关注", en: "Needs Attention" },
-  },
-
-  /* ============ 分支相关 ============ */
-  branches: {
-    title: { zh: "分支", en: "Branches" },
-    selector: { zh: "切换分支", en: "Switch Branch" },
-    create: { zh: "新建分支", en: "New Branch" },
-    fork: { zh: "Fork 分支", en: "Fork Branch" },
-    rollback: { zh: "回滚", en: "Rollback" },
-    rollbackConfirm: {
-      zh: "确定要回滚到此快照吗？这将创建一个新分支。",
-      en: "Are you sure you want to rollback to this snapshot? This will create a new branch.",
-    },
-    rollbackSuccess: { zh: "回滚成功", en: "Rollback successful" },
-    noChange: { zh: "当前已在此快照", en: "Already at this snapshot" },
-    forked: { zh: "已创建新分支", en: "New branch created" },
-    switched: {
-      zh: "已切换到包含此快照的分支",
-      en: "Switched to the branch containing this snapshot",
-    },
-    mainBranch: { zh: "主分支", en: "Main Branch" },
-    messageCount: { zh: "{count} 条消息", en: "{count} messages" },
-    snapshotUpdated: { zh: "快照已更新", en: "Snapshot updated" },
-    rollbackToSnapshot: {
-      zh: "回滚到此快照",
-      en: "Rollback to this snapshot",
-    },
-  },
-
-  /* ============ 审批相关 ============ */
-  approval: {
-    title: { zh: "审批", en: "Approval" },
-    requiresApproval: {
-      zh: "此运行需要您的审批",
-      en: "This run requires your approval",
-    },
-    riskCount: {
-      zh: "{count} 个高风险项",
-      en: "{count} high risk item(s)",
-    },
-    decisionCount: {
-      zh: "{count} 个待决策项",
-      en: "{count} pending decision(s)",
-    },
-    approve: { zh: "批准并继续", en: "Approve & Continue" },
-    reject: { zh: "拒绝", en: "Reject" },
-    adjust: { zh: "要求调整", en: "Request Adjustment" },
-    approveConfirm: {
-      zh: "确定批准此运行？所有风险和决策将被标记为已接受。",
-      en: "Approve this run? All risks and decisions will be marked as accepted.",
-    },
-    rejectConfirm: {
-      zh: "确定拒绝此运行？请填写拒绝理由。",
-      en: "Reject this run? Please provide a reason.",
-    },
-    adjustPrompt: {
-      zh: "请描述需要调整的内容：",
-      en: "Describe what needs to be adjusted:",
-    },
-    reason: { zh: "理由（可选）", en: "Reason (optional)" },
-    feedback: { zh: "调整反馈", en: "Adjustment Feedback" },
-    approved: { zh: "已批准", en: "Approved" },
-    rejected: { zh: "已拒绝", en: "Rejected" },
-    adjusted: { zh: "已要求调整", en: "Adjustment Requested" },
-    noRisks: { zh: "暂无高风险项", en: "No high-risk items" },
-    noDecisions: { zh: "暂无待决策项", en: "No pending decisions" },
-    riskTitle: { zh: "高风险项", en: "High Risks" },
-    decisionTitle: { zh: "待决策项", en: "Pending Decisions" },
-    mitigation: { zh: "缓解措施：", en: "Mitigation: " },
-    alternatives: { zh: "备选方案：", en: "Alternatives:" },
-    history: { zh: "审批历史", en: "Approval History" },
   },
 
   /* ============ 模板相关 ============ */
@@ -650,7 +526,7 @@ const translations = {
   artifacts: {
     title: { zh: "项目产物", en: "Artifacts" },
     emptyTitle: { zh: "暂无产物", en: "No artifacts yet" },
-    emptyDesc: { zh: "运行全权委托后，生成的产物会出现在这里", en: "Generated artifacts will appear here after a delegation run" },
+    emptyDesc: { zh: "与 Agent 对话后，生成的产物会出现在这里", en: "Generated artifacts will appear here after chatting with the Agent" },
     kind: {
       frontend_code: { zh: "前端代码", en: "Frontend Code" },
       backend_code: { zh: "后端代码", en: "Backend Code" },
