@@ -1,9 +1,7 @@
-"""消息服务 - 封装消息的保存和查询业务逻辑。
-
-M1 阶段只做简单的消息存储，M7 阶段扩展支持快照和 LLM 成本字段。
-"""
+"""消息服务 - 封装消息的保存和查询业务逻辑。"""
 
 from decimal import Decimal
+from typing import Any
 from uuid import UUID
 
 from platform_data.models.conversation import Message, MessageRole
@@ -12,24 +10,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 
 class MessageService:
-    """消息业务服务层，封装 MessageRepository 的调用。
-
-    参数:
-        session: SQLAlchemy 异步数据库会话
-    """
+    """消息业务服务层。"""
 
     def __init__(self, session: AsyncSession) -> None:
-        """初始化消息服务。
-
-        参数:
-            session: SQLAlchemy 异步数据库会话
-        """
+        self.session = session
         self.message_repo = MessageRepository(session)
 
     async def save_message(
         self,
         conversation_id: UUID,
-        branch_id: UUID,
         role: str,
         content: str,
     ) -> Message:
@@ -37,66 +26,38 @@ class MessageService:
 
         参数:
             conversation_id: 所属对话的 UUID
-            branch_id: 所属分支的 UUID
             role: 消息角色（"user" / "assistant" / "system"）
             content: 消息文本内容
 
         返回:
             新创建的 Message 实例
         """
-        # 将字符串 role 转换为枚举值
-        message_role = MessageRole(role)
-
         message = Message(
             conversation_id=conversation_id,
-            branch_id=branch_id,
-            role=message_role,
+            role=MessageRole(role),
             content=content,
         )
         return await self.message_repo.create(message)
 
-    async def list_by_branch(
-        self,
-        branch_id: UUID,
-        limit: int = 50,
-    ) -> list[Message]:
-        """查询指定分支下的消息列表。
-
-        参数:
-            branch_id: 分支 UUID
-            limit: 返回的最大记录数，默认 50
-
-        返回:
-            按创建时间降序排列的消息列表
-        """
-        return await self.message_repo.list_by_branch(branch_id=branch_id, limit=limit)
-
-    async def save_message_with_snapshot(
+    async def save_assistant_message(
         self,
         conversation_id: UUID,
-        branch_id: UUID,
-        role: str,
         content: str,
-        snapshot_before_id: UUID | None = None,
-        snapshot_after_id: UUID | None = None,
+        tool_calls: dict[str, Any] | None = None,
+        artifacts_created: list[str] | None = None,
         model: str | None = None,
         provider: str | None = None,
         prompt_tokens: int | None = None,
         completion_tokens: int | None = None,
         total_cost: float | None = None,
     ) -> Message:
-        """保存消息，附带快照和 LLM 成本信息。
-
-        与 save_message 的区别：支持 snapshot 和 cost 字段，
-        用于 M7 Chat API 中保存用户消息和助手回复。
+        """保存助手消息，附带工具调用和 LLM 成本信息。
 
         参数:
             conversation_id: 所属对话的 UUID
-            branch_id: 所属分支的 UUID
-            role: 消息角色（"user" / "assistant" / "system"）
             content: 消息文本内容
-            snapshot_before_id: 消息执行前的快照 ID
-            snapshot_after_id: 消息执行后的快照 ID
+            tool_calls: 工具调用记录
+            artifacts_created: 本轮产生的产物 ID 列表
             model: LLM 模型名称
             provider: LLM 提供商
             prompt_tokens: 输入 token 数
@@ -106,19 +67,14 @@ class MessageService:
         返回:
             新创建的 Message 实例
         """
-        # 将字符串 role 转换为枚举值
-        message_role = MessageRole(role)
-
-        # 将 float 类型的 cost 转为 Decimal（与模型字段类型一致）
         cost_decimal = Decimal(str(total_cost)) if total_cost is not None else None
 
         message = Message(
             conversation_id=conversation_id,
-            branch_id=branch_id,
-            role=message_role,
+            role=MessageRole.assistant,
             content=content,
-            snapshot_before_id=snapshot_before_id,
-            snapshot_after_id=snapshot_after_id,
+            tool_calls=tool_calls,
+            artifacts_created=artifacts_created,
             model=model,
             provider=provider,
             prompt_tokens=prompt_tokens,
@@ -126,3 +82,39 @@ class MessageService:
             total_cost=cost_decimal,
         )
         return await self.message_repo.create(message)
+
+    async def list_by_conversation(
+        self,
+        conversation_id: UUID,
+        limit: int = 50,
+    ) -> list[Message]:
+        """查询指定对话的消息列表（按时间升序）。
+
+        参数:
+            conversation_id: 对话 UUID
+            limit: 返回的最大记录数，默认 50
+
+        返回:
+            按创建时间升序排列的消息列表
+        """
+        return await self.message_repo.list_by_conversation(
+            conversation_id=conversation_id, limit=limit,
+        )
+
+    async def list_recent(
+        self,
+        conversation_id: UUID,
+        limit: int = 20,
+    ) -> list[Message]:
+        """查询指定对话最近 N 条消息（按时间升序）。
+
+        参数:
+            conversation_id: 对话 UUID
+            limit: 返回的最大记录数，默认 20
+
+        返回:
+            按创建时间升序排列的最近消息列表
+        """
+        return await self.message_repo.list_recent(
+            conversation_id=conversation_id, limit=limit,
+        )

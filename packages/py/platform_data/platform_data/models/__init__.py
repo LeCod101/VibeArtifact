@@ -1,16 +1,12 @@
 """Platform data models package."""
 
-# Approval
-from platform_data.models.approval import ApprovalAction, ApprovalRecord
-
 # Artifact
-from platform_data.models.artifact import Artifact, ArtifactStatus, ArtifactVersion
+from platform_data.models.artifact import Artifact, ArtifactExport, ArtifactType
 from platform_data.models.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
 
 # Conversation
 from platform_data.models.conversation import (
     Conversation,
-    ConversationBranch,
     ConversationMode,
     ConversationStatus,
     Message,
@@ -23,19 +19,9 @@ from platform_data.models.execution import (
     AuditEvent,
     CostLedger,
     JobRun,
-    LeaseLock,
     RunStatus,
 )
-
-# IR
-from platform_data.models.ir import (
-    IREdge,
-    IRNode,
-    IROperation,
-    IRSnapshot,
-    SnapshotStatus,
-)
-from platform_data.models.project import ModelTier, Project, ProjectConfig, ProjectStatus
+from platform_data.models.project import Project, ProjectStatus
 
 # Template
 from platform_data.models.template import ProjectTemplate, TemplateCategory
@@ -57,36 +43,23 @@ __all__ = [
     "User",
     "UserStatus",
     "Project",
-    "ProjectConfig",
     "ProjectStatus",
-    "ModelTier",
-    # IR
-    "IRSnapshot",
-    "IRNode",
-    "IREdge",
-    "IROperation",
-    "SnapshotStatus",
     # Conversation
     "Conversation",
-    "ConversationBranch",
     "Message",
     "ConversationMode",
     "ConversationStatus",
     "MessageRole",
     # Artifact
     "Artifact",
-    "ArtifactVersion",
-    "ArtifactStatus",
+    "ArtifactType",
+    "ArtifactExport",
     # Execution & Audit
     "JobRun",
     "AgentRun",
-    "LeaseLock",
     "CostLedger",
     "AuditEvent",
     "RunStatus",
-    # Approval
-    "ApprovalRecord",
-    "ApprovalAction",
     # Template
     "ProjectTemplate",
     "TemplateCategory",

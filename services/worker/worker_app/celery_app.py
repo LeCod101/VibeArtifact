@@ -12,8 +12,8 @@ celery_app = Celery(
     # 显式列出任务模块，确保 worker 启动时加载所有任务
     include=[
         "worker_app.tasks.ping",
-        "worker_app.tasks.agent_task",
-        "worker_app.tasks.orchestrate",
+        "worker_app.tasks.export_project",
+        "worker_app.tasks.batch_generate",
     ],
 )
 

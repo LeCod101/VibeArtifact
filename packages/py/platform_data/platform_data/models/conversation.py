@@ -1,8 +1,4 @@
-"""会话模型 - 定义对话、分支、消息三张表。
-
-会话绑定快照分支（Snapshot-Aware Tree Conversation），
-每条消息记录执行前后的快照 ID，支持树状回溯。
-"""
+"""会话模型 - 定义对话和消息两张表。"""
 
 import enum
 import uuid
@@ -57,50 +53,15 @@ class Conversation(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         default=ConversationStatus.active,
         server_default="active",
     )
-    # 当前活跃分支 ID（不设 FK 避免与 conversation_branches 循环依赖）
-    active_branch_id: Mapped[uuid.UUID | None] = mapped_column()
-
-
-class ConversationBranch(UUIDPrimaryKeyMixin, Base):
-    """会话分支表，支持树状分叉，每个分支绑定 base/head 快照。"""
-
-    __tablename__ = "conversation_branches"
-
-    conversation_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("conversations.id"), nullable=False, index=True,
-    )
-    parent_branch_id: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("conversation_branches.id"),
-    )
-    base_snapshot_id: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("ir_snapshots.id"),
-    )
-    head_snapshot_id: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("ir_snapshots.id"),
-    )
-    branch_name: Mapped[str | None] = mapped_column(String(200))
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(),
-    )
 
 
 class Message(UUIDPrimaryKeyMixin, Base):
-    """消息表，记录对话内容及关联的快照变化和 LLM 调用成本。"""
+    """消息表，记录对话内容及 LLM 调用成本。"""
 
     __tablename__ = "messages"
 
     conversation_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("conversations.id"), nullable=False, index=True,
-    )
-    branch_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("conversation_branches.id"), nullable=False, index=True,
-    )
-    # 消息执行前后的快照，用于回溯和 diff
-    snapshot_before_id: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("ir_snapshots.id"),
-    )
-    snapshot_after_id: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("ir_snapshots.id"),
     )
     role: Mapped[MessageRole] = mapped_column(
         Enum(MessageRole, name="message_role", native_enum=True),
@@ -110,9 +71,10 @@ class Message(UUIDPrimaryKeyMixin, Base):
     content_type: Mapped[str] = mapped_column(
         String(50), default="text", server_default="text",
     )
-    affected_node_ids: Mapped[list | None] = mapped_column(JSONB)
-    # agent_run_id 不设 FK，消息可能在 agent_run 创建前写入
-    agent_run_id: Mapped[uuid.UUID | None] = mapped_column()
+    # 工具调用记录（JSON 格式）
+    tool_calls: Mapped[dict | None] = mapped_column(JSONB)
+    # 本轮消息产生的产物 ID 列表
+    artifacts_created: Mapped[list | None] = mapped_column(JSONB)
     # LLM 调用元数据
     model: Mapped[str | None] = mapped_column(String(100))
     provider: Mapped[str | None] = mapped_column(String(100))

@@ -3,17 +3,14 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from api_app.api.routes.approvals import router as approvals_router
 from api_app.api.routes.artifacts import router as artifacts_router
 from api_app.api.routes.auth import router as auth_router
-from api_app.api.routes.branches import router as branches_router
+from api_app.api.routes.chat import router as chat_router
 from api_app.api.routes.conversations import router as conversations_router
-from api_app.api.routes.delegated import router as delegated_router
-from api_app.api.routes.generation import router as generation_router
+from api_app.api.routes.exports import router as exports_router
 from api_app.api.routes.health import router as health_router
 from api_app.api.routes.projects import router as projects_router
 from api_app.api.routes.settings import router as settings_router
-from api_app.api.routes.snapshots import router as snapshots_router
 from api_app.api.routes.templates import router as templates_router
 
 app = FastAPI(title="VibeArtifact API", version="0.1.0")
@@ -30,11 +27,8 @@ app.include_router(health_router, prefix="/api/v1")
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(projects_router, prefix="/api/v1")
 app.include_router(conversations_router, prefix="/api/v1")
-app.include_router(generation_router, prefix="/api/v1")
-app.include_router(delegated_router, prefix="/api/v1")
-app.include_router(snapshots_router, prefix="/api/v1")
-app.include_router(branches_router, prefix="/api/v1")
+app.include_router(chat_router, prefix="/api/v1")
 app.include_router(artifacts_router, prefix="/api/v1")
-app.include_router(approvals_router, prefix="/api/v1")
+app.include_router(exports_router, prefix="/api/v1")
 app.include_router(templates_router, prefix="/api/v1")
 app.include_router(settings_router, prefix="/api/v1")

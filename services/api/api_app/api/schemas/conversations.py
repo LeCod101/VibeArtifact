@@ -1,11 +1,4 @@
-"""对话相关的请求和响应模型 - 定义创建对话、消息保存等数据结构。
-
-包含：
-- 创建对话请求/响应
-- 保存消息请求/响应
-- 发送消息请求/响应（M7 Chat API 升级）
-- 变更摘要响应
-"""
+"""对话相关的请求和响应模型。"""
 
 from datetime import datetime
 from typing import Literal
@@ -15,35 +8,20 @@ from pydantic import BaseModel
 
 
 class CreateConversationRequest(BaseModel):
-    """创建对话请求。
-
-    字段：
-        title: 对话标题，可选
-    """
+    """创建对话请求。"""
 
     title: str | None = None
 
 
 class ConversationResponse(BaseModel):
-    """对话信息响应 - 返回对话基本信息。
-
-    字段：
-        id: 对话唯一标识
-        project_id: 所属项目 UUID
-        title: 对话标题
-        mode: 对话模式（chat / delegated）
-        status: 对话状态（active / archived）
-        active_branch_id: 当前活跃分支 UUID
-        created_at: 创建时间
-        updated_at: 更新时间
-    """
+    """对话信息响应。"""
 
     id: UUID
     project_id: UUID
     title: str | None
     mode: str
     status: str
-    active_branch_id: UUID | None
+    summary: str | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -51,91 +29,32 @@ class ConversationResponse(BaseModel):
 
 
 class SaveMessageRequest(BaseModel):
-    """保存消息请求。
-
-    字段：
-        role: 消息角色，只接受 "user" / "assistant" / "system"
-        content: 消息文本内容
-    """
+    """保存消息请求。"""
 
     role: Literal["user", "assistant", "system"]
     content: str
 
 
 class MessageResponse(BaseModel):
-    """消息信息响应 - 返回消息基本信息。
-
-    字段：
-        id: 消息唯一标识
-        conversation_id: 所属对话 UUID
-        branch_id: 所属分支 UUID
-        role: 消息角色
-        content: 消息文本内容
-        content_type: 内容类型（默认 "text"）
-        snapshot_before_id: 消息执行前的快照 ID（可选）
-        snapshot_after_id: 消息执行后的快照 ID（可选）
-        created_at: 创建时间
-    """
+    """消息信息响应。"""
 
     id: UUID
     conversation_id: UUID
-    branch_id: UUID
     role: str
     content: str
     content_type: str
-    snapshot_before_id: str | None = None
-    snapshot_after_id: str | None = None
+    tool_calls: dict | None = None
+    artifacts_created: list | None = None
+    model: str | None = None
+    provider: str | None = None
+    prompt_tokens: int | None = None
+    completion_tokens: int | None = None
     created_at: datetime
 
     model_config = {"from_attributes": True}
 
 
-# ──────────────────────────────────────────────
-# M7 Chat API 升级新增 schema
-# ──────────────────────────────────────────────
-
-
 class SendMessageRequest(BaseModel):
-    """发送消息请求 — 用户在对话中发送一条消息。
-
-    字段：
-        content: 用户输入的消息文本
-    """
+    """发送消息请求（conversations 路由用，不触发 AI）。"""
 
     content: str
-
-
-class ChangeSummaryResponse(BaseModel):
-    """变更摘要响应 — 描述本次编排产生的变更。
-
-    字段：
-        summary: 变更摘要文本
-        affected_areas: 受影响的模块/领域列表
-        operations_count: IR 操作总数
-        agents_executed: 实际执行的 Agent 列表
-        new_snapshot_id: 新快照 ID（Phase 1 可能为空）
-        warnings: 警告信息列表
-    """
-
-    summary: str
-    affected_areas: list[str]
-    operations_count: int
-    agents_executed: list[str]
-    new_snapshot_id: str | None = None
-    warnings: list[str] = []
-
-
-class SendMessageResponse(BaseModel):
-    """发送消息响应 — 包含用户消息、助手回复和变更摘要。
-
-    字段：
-        user_message: 用户消息记录
-        assistant_message: 助手回复消息记录
-        change_summary: 本次编排的变更摘要
-    """
-
-    user_message: MessageResponse
-    assistant_message: MessageResponse
-    change_summary: ChangeSummaryResponse
-
-    model_config = {"from_attributes": True}

@@ -12,6 +12,7 @@ dependencies = [
     "pydantic-settings>=2.0",
     "alembic>=1.13",
     "platform-data",
+    "agents",
     "bcrypt>=4.0",
     "python-jose[cryptography]>=3.3",
     "email-validator>=2.0",
@@ -19,6 +20,7 @@ dependencies = [
 
 [tool.uv.sources]
 platform-data = { workspace = true }
+agents = { workspace = true }
 
 [tool.hatch.build.targets.wheel]
 packages = ["vibeartifact_api"]
