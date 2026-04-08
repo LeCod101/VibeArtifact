@@ -2,7 +2,7 @@
 
 # VibeArtifact
 
-**AI Product Engineering OS — 从模糊想法到可交付 MVP**
+**AI-Powered Vibe Coding Assistant — 对话式 AI 编程助手**
 
 [![GitHub Stars](https://img.shields.io/github/stars/LeCod101/VibeArtifact?style=flat-square)](https://github.com/LeCod101/VibeArtifact/stargazers)
 [![GitHub Forks](https://img.shields.io/github/forks/LeCod101/VibeArtifact?style=flat-square)](https://github.com/LeCod101/VibeArtifact/network)
@@ -10,7 +10,7 @@
 [![GitHub Pull Requests](https://img.shields.io/github/issues-pr/LeCod101/VibeArtifact?style=flat-square)](https://github.com/LeCod101/VibeArtifact/pulls)
 [![GitHub License](https://img.shields.io/github/license/LeCod101/VibeArtifact?style=flat-square)](https://github.com/LeCod101/VibeArtifact/blob/main/LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
-[![Next.js](https://img.shields.io/badge/Next.js-15-000000?style=flat-square&logo=nextdotjs&logoColor=white)](https://nextjs.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-16-000000?style=flat-square&logo=nextdotjs&logoColor=white)](https://nextjs.org/)
 [![CI](https://img.shields.io/github/actions/workflow/status/LeCod101/VibeArtifact/ci.yml?branch=dev&style=flat-square&label=CI)](https://github.com/LeCod101/VibeArtifact/actions)
 
 [English](./README-EN.md) | [中文文档](./README.md)
@@ -19,69 +19,89 @@
 
 ## 项目概述
 
-**VibeArtifact** 是一个 AI 产品工程操作系统。用户输入一个模糊的产品想法，系统自动完成需求收敛、架构设计、代码生成，交付前后端源码、文档、图表与部署配置。
+**VibeArtifact** 是一个对话式 AI 编程助手，通过自然语言对话逐步迭代你的项目。一个 Agent + 丰富的工具集，代替复杂的多 Agent 流水线，实现代码生成、文档编写、架构设计等全栈开发任务。
 
-> "Vibe" 代表灵感与直觉，"Artifact" 代表可交付的工程产物。VibeArtifact 的目标是让每一个灵感都能快速落地为可运行的 MVP。
+> "Vibe" 代表灵感与直觉，"Artifact" 代表可交付的工程产物。
+> 
+> 参考 [Anything.com](https://www.anything.com/) 的架构理念 — 不需要多 Agent 流水线，一个足够聪明的 Agent + 好的工具就够了。
 
 ## 核心特性
 
-- **想法到 MVP 全自动** — 自然语言描述想法，系统自动收敛为可执行的 MVP 方案，输出完整的前后端源码、数据库 Schema、API 文档和部署配置
-- **10 Agent 流水线协作** — intent、contraction、planner、schema、backend、frontend、doc、diagram、qa、export，各司其职，通过 IR 黑板模式间接协作
-- **IR 驱动架构** — LLM 输出高层业务结构（ScopeDraft、SchemaPlan 等），经 Translator 翻译为标准化 IROperation，确保输出质量可控、可审计
-- **全栈代码生成** — 一次生成 Next.js 前端 + FastAPI 后端 + PostgreSQL 数据库 + Docker Compose 部署配置
-- **快照版本控制** — 全量物理快照机制，子树级 Lease Lock 并发控制，确保多 Agent 同时操作时数据一致性
-- **会话绑定分支** — Snapshot-Aware Tree Conversation，每个会话绑定独立的快照分支，支持多版本并行演进和回溯
+- **对话式迭代开发** — 像和同事聊天一样描述需求，Agent 逐步生成代码、文档和图表，实时预览产物
+- **单 Agent + 工具集** — 一个 VibeArtifactAgent 配备 13 种专业工具（代码生成、文档编写、项目管理等），通过 System Prompt 注入全平台知识
+- **三种交互模式** — Auto（自动模式，所有工具可用）、Discussion（讨论模式，仅对话不生成）、Thinking（深度思考，低温度推理）
+- **SSE 实时流式响应** — Agent 的思考过程、工具调用、内容生成全程实时流式输出，所见即所得
+- **产物版本管理** — 每次修改自动创建新版本，支持版本历史浏览和回溯
+- **一键导出 ZIP** — 项目产物打包为 ZIP 文件，随时下载
 
-## 生成流程
+## 交互流程
 
-| 步骤 | 阶段 | 主要操作 | 参与 Agent |
-|------|------|----------|-----------|
-| 1 | 用户输入 | 自然语言描述产品想法 | — |
-| 2 | 意图识别 | 解析用户意图，提取功能范围 | intent |
-| 3 | 需求收缩 | 模糊想法 → MVP 范围 + 风险识别 | contraction |
-| 4 | 任务规划 | 拆解为有序任务步骤 | planner |
-| 5 | Schema 设计 | 数据模型 + API 端点设计 | schema |
-| 6 | 代码生成 | 并行生成前端、后端代码 | backend, frontend |
-| 7 | 文档 + 图表 | 生成文档和 Mermaid 图表 | doc, diagram |
-| 8 | 质量检查 | 代码审查 + 修复建议 | qa |
-| 9 | 产物导出 | 组装源码 + 文档 + Docker Compose | export |
+```
+用户输入需求（自然语言）
+     ↓
+Agent 分析 → 选择工具 → 调用工具
+     ↓
+实时流式输出（思考 / 工具调用 / 内容生成）
+     ↓
+产物创建（代码 / 文档 / 图表 / SQL）
+     ↓
+用户预览 → 继续迭代 or 导出
+```
 
 ## 技术栈
 
 | 层级 | 技术 | 说明 |
 |------|------|------|
-| 平台前端 | Next.js 15 + React + TypeScript | 用户交互界面 |
-| 平台 API | FastAPI + Python 3.12 | 核心业务逻辑 |
-| 平台 Worker | Celery + Python 3.12 | 异步任务处理 |
-| 数据库 | PostgreSQL + SQLAlchemy 2 + Alembic | 数据持久化与迁移 |
-| 队列/锁/缓存 | Redis | 任务队列、分布式锁、缓存 |
-| 认证 | JWT (access + refresh token) | 用户认证 |
-| Monorepo | pnpm workspace + uv workspace | 前端 + Python 统一管理 |
-| 生成项目栈 | Next.js + FastAPI + PostgreSQL + Docker Compose | 默认生成的项目技术栈 |
+| 前端 | Next.js 16 + React 19 + TypeScript | 三栏工作区 UI |
+| UI 组件 | Tailwind CSS v4 + Shadcn UI | 现代化组件库 |
+| 后端 API | FastAPI + Python 3.12 | SSE 流式响应 + RESTful API |
+| Agent 引擎 | 单 Agent + 工具注册 + LiteLLM | 多模型统一抽象 |
+| 异步任务 | Celery + Redis | 导出打包、批量生成 |
+| 数据库 | PostgreSQL + SQLAlchemy 2 + Alembic | 异步 ORM + 版本迁移 |
+| 缓存/队列 | Redis | 任务队列、Celery broker |
+| 认证 | JWT (access + refresh token) | 无状态认证 |
+| Monorepo | pnpm workspace + uv workspace | 前后端统一管理 |
 
 ## 项目结构
 
 ```
-vibeartifact/
+VibeArtifact/
 ├── apps/
-│   └── web/                        # Next.js 15 前端应用
+│   └── web/                          # Next.js 前端应用
+│       └── src/
+│           ├── app/                   # 页面路由（dashboard, project, templates）
+│           ├── features/              # 业务模块（chat, artifact, project, templates）
+│           ├── components/            # 共享组件（ui, layout）
+│           ├── lib/                   # API 客户端、工具函数
+│           └── i18n/                  # 国际化（中/英文）
 ├── services/
-│   ├── api/                        # FastAPI 主服务
-│   │   ├── api_app/                # 应用代码（routes, models, services）
-│   │   └── alembic/                # 数据库迁移
-│   └── worker/                     # Celery Worker
+│   ├── api/                          # FastAPI 主服务
+│   │   ├── api_app/
+│   │   │   ├── api/routes/           # 路由（chat, artifacts, exports, auth...）
+│   │   │   ├── api/schemas/          # Pydantic 请求/响应模型
+│   │   │   ├── api/deps/             # 依赖注入（auth, db）
+│   │   │   ├── application/services/ # 业务服务（agent_service, project_service）
+│   │   │   └── infra/db/migrations/  # Alembic 数据库迁移
+│   │   └── alembic.ini
+│   └── worker/                       # Celery Worker
 │       └── worker_app/
-├── packages/py/                    # Python 共享包（uv workspace）
-│   ├── ir_core/                    # IR 核心：节点/边/操作类型、校验器、快照引擎
-│   ├── agents/                     # Agent 基础设施：schema、prompt、config、translator、runner
-│   ├── platform_data/              # ORM 模型、Repository、Session 工厂
-│   └── runtime_tools/              # LLM Provider、Cost Tracker 等运行时工具
-├── infra/                          # Docker Compose（PostgreSQL + Redis）
-├── tests/                          # 根级集成测试
-├── pyproject.toml                  # uv workspace 根配置
-├── pnpm-workspace.yaml             # pnpm workspace 配置
-├── Makefile                        # 常用命令快捷方式
-└── .github/workflows/ci.yml       # GitHub Actions CI
+│           ├── celery_app.py
+│           └── tasks/                # export_project, batch_generate
+├── packages/py/                      # Python 共享包（uv workspace）
+│   ├── agents/                       # Agent 核心
+│   │   └── agents/
+│   │       ├── agent.py              # VibeArtifactAgent 主类
+│   │       ├── modes.py              # 模式定义（auto/discussion/thinking）
+│   │       ├── system_prompt.py      # System Prompt 构建器
+│   │       ├── tool_executor.py      # 工具调用执行器
+│   │       └── tools/                # 工具集（code, doc, project, util）
+│   ├── platform_data/                # ORM 模型（User, Project, Artifact, Message...）
+│   └── runtime_tools/                # 运行时工具（LLM Provider, ZIP Packer, Cost Tracker）
+├── scripts/
+│   └── init_database.sql             # 数据库初始化脚本
+├── infra/                            # Docker Compose（PostgreSQL + Redis）
+├── pyproject.toml                    # uv workspace 根配置
+└── pnpm-workspace.yaml               # pnpm workspace 配置
 ```
 
 ## 快速开始
@@ -109,17 +129,22 @@ uv sync --all-packages
 # 4. 安装前端依赖
 pnpm install
 
-# 5. 数据库迁移
+# 5. 数据库迁移（二选一）
+# 方式 A：通过 Alembic
 cd services/api && uv run alembic upgrade head && cd ../..
+# 方式 B：通过 SQL 脚本
+psql -U vibe -d vibeartifact -f scripts/init_database.sql
 
 # 6. 配置环境变量
-cp .env.example .env   # 编辑 .env 填入数据库连接和 LLM API Key
+cp .env.example .env   # 编辑 .env 填入 LLM API Key 和数据库连接
 
 # 7. 启动服务
-# 终端 1：API
+# 终端 1：API 服务
 cd services/api && uv run uvicorn api_app.main:app --reload
 # 终端 2：前端
 pnpm --filter web dev
+# 终端 3：Worker（可选，用于导出打包）
+cd services/worker && celery -A worker_app.celery_app worker --loglevel=info
 ```
 
 访问 `http://localhost:3000` 开始使用。
@@ -130,24 +155,54 @@ pnpm --filter web dev
 # Python 全量测试
 uv run pytest
 
-# 前端 lint
-pnpm --filter web lint
+# 前端 TypeScript 编译检查
+pnpm --filter web tsc --noEmit
 
 # Python lint
 uv run ruff check .
 ```
 
-## 开发进度
+## 数据库模型
 
-| Milestone | 状态 | 说明 |
-|-----------|------|------|
-| M0 仓库初始化 | ✅ | 项目骨架、Docker Compose、CI |
-| M1 数据模型与基础设施 | ✅ | ORM、认证、CRUD、Lease Lock、前端页面 |
-| M2 IR Core v1 | ✅ | 类型系统、校验器、快照引擎、Graph Query |
-| M3 Agent 基础设施 | ✅ | 10 Agent Schema、LLM Provider、Prompt、Translator、Runner |
-| M4 MVP 收缩 | 🔲 | contraction agent、容量点数 |
-| M5 全权委托闭环 | 🔲 | DAG 编排、代码生成、ZIP 导出 |
-| M6 Gate + QA 回路 | 🔲 | 编译门禁、qa agent、修复回路 |
+共 14 张业务表，覆盖核心业务、执行审计、用户配置和内容模板：
+
+```
+users                     # 用户账户
+├── projects              # 项目
+│   ├── conversations     # 对话
+│   │   └── messages      # 消息（含 tool_calls JSONB）
+│   ├── artifacts         # 产物（代码/文档/图表，parent_id 版本链）
+│   ├── artifact_exports  # 导出记录
+│   ├── job_runs          # Celery 任务运行
+│   │   └── agent_runs    # Agent 调用记录
+│   │       └── cost_ledger  # 成本账本
+│   └── audit_events      # 审计事件
+├── user_api_keys         # LLM API 密钥（加密）
+├── user_model_preferences  # 模型偏好
+├── usage_records         # 用量记录
+└── project_templates     # 项目模板
+```
+
+完整建表脚本：[`scripts/init_database.sql`](./scripts/init_database.sql)
+
+## API 端点
+
+| 端点 | 方法 | 说明 |
+|------|------|------|
+| `/api/v1/health` | GET | 健康检查 |
+| `/api/v1/auth/register` | POST | 用户注册 |
+| `/api/v1/auth/login` | POST | 用户登录 |
+| `/api/v1/projects` | GET/POST | 项目列表 / 创建 |
+| `/api/v1/projects/{id}` | GET/PUT | 项目详情 / 更新 |
+| `/api/v1/projects/{id}/conversations` | GET/POST | 对话列表 / 创建 |
+| `/api/v1/projects/{id}/chat` | POST | SSE 流式对话（Agent 核心端点） |
+| `/api/v1/projects/{id}/artifacts` | GET | 产物列表 |
+| `/api/v1/artifacts/{id}` | GET/PUT | 产物详情 / 编辑（创建新版本） |
+| `/api/v1/artifacts/{id}/versions` | GET | 版本历史 |
+| `/api/v1/projects/{id}/export` | POST | 触发导出 |
+| `/api/v1/exports/{id}/download` | GET | 下载导出文件 |
+| `/api/v1/templates` | GET | 模板列表 |
+| `/api/v1/settings` | GET/PUT | 用户设置 |
 
 ## 贡献指南
 
