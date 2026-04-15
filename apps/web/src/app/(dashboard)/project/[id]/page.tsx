@@ -26,7 +26,11 @@ import {
   useCreateConversationMutation,
   useMessagesQuery,
 } from "@/features/chat/api";
-import { useArtifactsQuery, useArtifactQuery } from "@/features/artifact/api";
+import {
+  useArtifactsQuery,
+  useArtifactQuery,
+  useCodeArtifactsQuery,
+} from "@/features/artifact/api";
 import { useAgentSSE } from "@/features/chat/hooks/use-agent-sse";
 import { ConversationList } from "@/features/chat/components/conversation-list";
 import { MessageThread } from "@/features/chat/components/message-thread";
@@ -70,6 +74,8 @@ export default function ProjectWorkspacePage() {
   const { data: artifacts, isLoading: artifactsLoading } =
     useArtifactsQuery(projectId);
   const { data: selectedArtifact } = useArtifactQuery(selectedArtifactId);
+  // 获取项目所有 code 类型产物（含 content），供 WebContainer 项目级预览使用
+  const { data: codeArtifacts } = useCodeArtifactsQuery(projectId);
   const createConvMutation = useCreateConversationMutation(projectId);
 
   const sse = useAgentSSE(projectId);
@@ -362,6 +368,7 @@ export default function ProjectWorkspacePage() {
           <aside className="hidden lg:flex w-[45%] max-w-[600px] flex-col border-l border-border min-h-0 shrink-0">
             <ArtifactPanel
               artifact={selectedArtifact ?? null}
+              projectArtifacts={codeArtifacts}
               onClose={() => setRightPanelOpen(false)}
             />
           </aside>

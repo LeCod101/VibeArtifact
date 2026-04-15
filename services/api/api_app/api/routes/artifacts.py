@@ -96,6 +96,33 @@ async def list_artifacts(
 
 
 # ──────────────────────────────────────
+# 获取项目所有 code 类型产物（含完整 content）
+# ──────────────────────────────────────
+
+@router.get(
+    "/projects/{project_id}/artifacts/code-files",
+    response_model=list[ArtifactResponse],
+)
+async def list_code_artifacts_with_content(
+    project_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> list[ArtifactResponse]:
+    """获取项目所有 code 类型产物（含完整 content），供 WebContainer 预览使用。"""
+    await _verify_project_owner(project_id, current_user, db)
+    stmt = (
+        select(Artifact)
+        .where(
+            Artifact.project_id == project_id,
+            Artifact.artifact_type == "code",
+        )
+        .order_by(Artifact.created_at.desc())
+    )
+    result = await db.execute(stmt)
+    return list(result.scalars().all())
+
+
+# ──────────────────────────────────────
 # 产物详情
 # ──────────────────────────────────────
 

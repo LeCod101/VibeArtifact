@@ -8,7 +8,9 @@
 
 import { useEffect, useState } from "react";
 import {
+  Code2,
   Database,
+  Eye,
   FileCode2,
   FileQuestion,
   FileText,
@@ -22,6 +24,8 @@ import type { ArtifactResponseV2, ArtifactType } from "@/lib/api-client/types";
 import { useArtifactQuery } from "@/features/artifact/api";
 import { CodeViewer } from "./code-viewer";
 import { MarkdownViewer } from "./markdown-viewer";
+import { PreviewIframe } from "./preview-iframe";
+import { PreviewPanel } from "@/features/preview/preview-panel";
 import { VersionHistory } from "./version-history";
 import { Button } from "@/components/ui/button";
 
@@ -36,6 +40,8 @@ const HEADER_ICONS: Record<ArtifactType, typeof FileCode2> = {
 
 export interface ArtifactPanelProps {
   artifact: ArtifactResponseV2 | null;
+  /** 项目所有 code 类型产物（含 content），用于项目级 WebContainer 预览 */
+  projectArtifacts?: ArtifactResponseV2[];
   onClose?: () => void;
 }
 
@@ -43,17 +49,20 @@ function isCodeArtifact(type: ArtifactType): boolean {
   return type === "code";
 }
 
-export function ArtifactPanel({ artifact, onClose }: ArtifactPanelProps) {
+export function ArtifactPanel({ artifact, projectArtifacts, onClose }: ArtifactPanelProps) {
   const [versionPanelOpen, setVersionPanelOpen] = useState(false);
   const [previewVersionId, setPreviewVersionId] = useState<string | null>(null);
+  // 代码/预览 Tab 切换（仅 code 类型产物有效）
+  const [activeTab, setActiveTab] = useState<"code" | "preview">("code");
 
   const { data: previewArtifact, isLoading: previewLoading } =
     useArtifactQuery(previewVersionId);
 
-  // 切换侧边栏选中的产物时，收起版本区并清除历史预览
+  // 切换侧边栏选中的产物时，收起版本区并清除历史预览，重置 Tab
   useEffect(() => {
     setPreviewVersionId(null);
     setVersionPanelOpen(false);
+    setActiveTab("code");
   }, [artifact?.id]);
 
   if (!artifact) {
@@ -107,6 +116,35 @@ export function ArtifactPanel({ artifact, onClose }: ArtifactPanelProps) {
           </span>
         </div>
         <div className="flex shrink-0 items-center gap-1">
+          {/* code 类型产物显示「代码/预览」切换 Tab */}
+          {isCodeArtifact(rootArtifact.artifact_type) ? (
+            <div className="flex items-center gap-0.5 rounded-md bg-muted p-0.5 mr-1">
+              <button
+                type="button"
+                onClick={() => setActiveTab("code")}
+                className={`inline-flex items-center gap-1 rounded px-2 py-1 text-[11px] font-medium transition-colors ${
+                  activeTab === "code"
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Code2 size={11} />
+                代码
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("preview")}
+                className={`inline-flex items-center gap-1 rounded px-2 py-1 text-[11px] font-medium transition-colors ${
+                  activeTab === "preview"
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Eye size={11} />
+                预览
+              </button>
+            </div>
+          ) : null}
           <Button
             type="button"
             variant={versionPanelOpen ? "secondary" : "ghost"}
@@ -154,11 +192,27 @@ export function ArtifactPanel({ artifact, onClose }: ArtifactPanelProps) {
           </div>
         ) : displayArtifact ? (
           isCodeArtifact(displayArtifact.artifact_type) ? (
-            <CodeViewer
-              code={displayArtifact.content}
-              language={displayArtifact.language}
-              fileName={displayArtifact.file_path}
-            />
+            activeTab === "preview" ? (
+              /* 多文件项目使用 WebContainer 预览，单文件使用 iframe 预览 */
+              projectArtifacts && projectArtifacts.length > 1 ? (
+                <PreviewPanel
+                  artifacts={projectArtifacts}
+                  visible={activeTab === "preview"}
+                />
+              ) : (
+                <PreviewIframe
+                  code={displayArtifact.content}
+                  language={displayArtifact.language}
+                  filePath={displayArtifact.file_path}
+                />
+              )
+            ) : (
+              <CodeViewer
+                code={displayArtifact.content}
+                language={displayArtifact.language}
+                fileName={displayArtifact.file_path}
+              />
+            )
           ) : (
             <MarkdownViewer content={displayArtifact.content} />
           )

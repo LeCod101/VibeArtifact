@@ -62,6 +62,22 @@ export function useUpdateArtifactMutation(artifactId: string) {
 }
 
 /**
+ * 获取项目所有 code 类型产物（含完整 content）
+ *
+ * 供 WebContainer 预览使用，返回 ArtifactResponseV2[] 含 content 字段。
+ */
+export function useCodeArtifactsQuery(projectId: string) {
+  return useQuery({
+    queryKey: ["code-artifacts", projectId],
+    queryFn: () =>
+      apiGet<ArtifactResponseV2[]>(
+        `/api/v1/projects/${projectId}/artifacts/code-files`
+      ),
+    enabled: !!projectId,
+  });
+}
+
+/**
  * 获取产物版本历史
  */
 export function useArtifactVersionsQuery(artifactId: string | null) {
