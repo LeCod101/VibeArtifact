@@ -11,8 +11,7 @@ Todo 基准用例 — 输入 "Todo SaaS" → 分析 → 无需收缩 → 确认�
 
 from agents.capacity.calculator import CapacityCalculator
 from agents.capacity.tiers import CapacityTier, can_skip_contraction
-from agents.schemas.high_level import ScopeDraft, ScopeItem
-from ir_core.schema.node_types import Priority
+from agents.schemas.high_level import Priority, ScopeDraft, ScopeItem
 
 # ============================================================
 # Todo SaaS 基准数据

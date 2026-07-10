@@ -271,12 +271,10 @@ class TestRunManager:
         manager = RunManager(session_factory=mock_factory)
 
         project_id = uuid4()
-        snapshot_id = uuid4()
         agent_ids = ["intent", "contraction", "planner"]
 
         result = await manager.create_run(
             project_id=project_id,
-            snapshot_id=snapshot_id,
             agent_ids=agent_ids,
         )
 

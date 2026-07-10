@@ -20,18 +20,20 @@ from agents.schemas.base import AgentInput, AgentOutput
 class TestRegisterAllAgents:
     """register_all_agents 批量注册测试。"""
 
-    def test_registers_10_agents(self):
-        """register_all_agents() 注册 10 个 Agent。"""
+    def test_registers_13_agents(self):
+        """register_all_agents() 注册 13 个 Agent（9 流水线 + 4 reviewer）。"""
         registry = register_all_agents()
         agents = registry.list_agents()
-        assert len(agents) == 10
+        assert len(agents) == 13
 
     def test_all_agent_ids_present(self):
-        """10 个 Agent 的 ID 都存在于注册表中。"""
+        """全部 Agent 的 ID 都存在于注册表中。"""
         registry = register_all_agents()
         expected_ids = {
             "intent", "contraction", "planner", "schema",
-            "backend", "frontend", "doc", "diagram", "qa", "export",
+            "backend", "frontend", "doc", "diagram", "export",
+            "backend_reviewer", "frontend_reviewer",
+            "doc_reviewer", "diagram_reviewer",
         }
         actual_ids = {a.agent_id for a in registry.list_agents()}
         assert actual_ids == expected_ids
@@ -75,12 +77,12 @@ class TestRegistryFilter:
         register_all_agents()
         registry = AgentRegistry.get_instance()
         result = registry.list_by_tier(ModelTier.REASONING)
-        # intent, contraction, planner, schema, qa 都是 REASONING
-        assert len(result) == 5
+        # intent, contraction, planner, schema + 4 个 reviewer 都是 REASONING
+        assert len(result) == 8
         ids = {a.agent_id for a in result}
         assert "intent" in ids
         assert "schema" in ids
-        assert "qa" in ids
+        assert "backend_reviewer" in ids
 
     def test_list_by_tier_generation(self):
         """list_by_tier(GENERATION) 返回正确数量的 Agent。"""
@@ -101,7 +103,7 @@ class TestRegistryEdgeCases:
             agent_id="test_agent",
             name="Test Agent",
             description="测试用 Agent",
-            role_category=RoleCategory.QA,
+            role_category=RoleCategory.REVIEW,
             model_tier=ModelTier.REASONING,
             input_schema=AgentInput,
             output_schema=AgentOutput,
@@ -117,7 +119,7 @@ class TestRegistryEdgeCases:
         """reset() 后注册表为空。"""
         register_all_agents()
         registry = AgentRegistry.get_instance()
-        assert len(registry.list_agents()) == 10
+        assert len(registry.list_agents()) == 13
 
         # 重置
         AgentRegistry.reset()

@@ -246,7 +246,7 @@ async def send_message(
 
     branch_id = conversation.active_branch_id
     conv_service = ConversationService(db)
-    branch = await conv_service.get_branch_with_snapshot(branch_id)
+    branch = await conv_service.get_branch(branch_id)
 
     if branch is None:
         raise HTTPException(
@@ -254,24 +254,16 @@ async def send_message(
             detail="分支不存在",
         )
 
-    # ── 步骤 3: 加载当前快照 ──
-    current_snapshot_id = branch.head_snapshot_id
-
-    # Phase 1：没有快照加载机制，传空 nodes/edges（冷启动会处理）
-    ir_nodes = []
-    ir_edges = []
-
-    # ── 步骤 4: 保存用户消息 ──
+    # ── 步骤 3: 保存用户消息 ──
     msg_service = MessageService(db)
-    user_message = await msg_service.save_message_with_snapshot(
+    user_message = await msg_service.save_message_with_cost(
         conversation_id=conversation_id,
         branch_id=branch_id,
         role="user",
         content=body.content,
-        snapshot_before_id=current_snapshot_id,
     )
 
-    # ── 步骤 5: 调用 ChatOrchestrator ──
+    # ── 步骤 4: 调用 ChatOrchestrator ──
     # 获取 Redis 连接用于 SSE 事件推送
     try:
         redis = await get_redis()
@@ -284,29 +276,21 @@ async def send_message(
         project_id=conversation.project_id,
         conversation_id=conversation_id,
         branch_id=branch_id,
-        snapshot_id=current_snapshot_id,
         user_message=body.content,
-        ir_nodes=ir_nodes,
-        ir_edges=ir_edges,
+        workspace_files=[],
         redis=redis,
     )
 
-    # ── 步骤 6: 保存助手消息 ──
-    assistant_message = await msg_service.save_message_with_snapshot(
+    # ── 步骤 5: 保存助手消息 ──
+    assistant_message = await msg_service.save_message_with_cost(
         conversation_id=conversation_id,
         branch_id=branch_id,
         role="assistant",
         content=result.assistant_message,
-        snapshot_before_id=current_snapshot_id,
-        snapshot_after_id=result.new_snapshot_id,
         total_cost=result.cost_total if result.cost_total > 0 else None,
     )
 
-    # ── 步骤 7: 更新 branch.head_snapshot_id ──
-    if result.new_snapshot_id is not None:
-        await conv_service.update_branch_head(branch_id, result.new_snapshot_id)
-
-    # ── 步骤 8: 提交事务并返回 ──
+    # ── 步骤 6: 提交事务并返回 ──
     await db.commit()
 
     # 构建变更摘要响应
@@ -315,9 +299,7 @@ async def send_message(
         affected_areas=result.change_summary.affected_areas,
         operations_count=result.change_summary.operations_count,
         agents_executed=result.change_summary.agents_executed,
-        new_snapshot_id=(
-            str(result.new_snapshot_id) if result.new_snapshot_id else None
-        ),
+        new_snapshot_id=None,
         warnings=result.change_summary.warnings,
     )
 

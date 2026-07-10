@@ -8,7 +8,6 @@ requires-python = ">=3.12"
 members = [
     "services/api",
     "services/worker",
-    "packages/py/ir_core",
     "packages/py/platform_data",
     "packages/py/agents",
     "packages/py/runtime_tools",
@@ -38,7 +37,6 @@ select = ["E", "F", "I", "W"]
 testpaths = [
     "services/api/tests",
     "services/worker/tests",
-    "packages/py/ir_core/tests",
     "packages/py/platform_data/tests",
     "packages/py/agents/tests",
     "packages/py/runtime_tools/tests",

@@ -1,6 +1,6 @@
 """项目服务 - 封装项目创建、查询等核心业务逻辑。
 
-创建项目时自动初始化关联资源：空 IR 快照、默认对话和默认分支。
+创建项目时自动初始化关联资源：默认对话和默认分支。
 """
 
 from uuid import UUID
@@ -14,7 +14,6 @@ from platform_data.models.project import Project, ProjectStatus
 from platform_data.repositories.branch_repo import BranchRepository
 from platform_data.repositories.conversation_repo import ConversationRepository
 from platform_data.repositories.project_repo import ProjectRepository
-from platform_data.repositories.snapshot_repo import SnapshotRepository
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
@@ -33,7 +32,6 @@ class ProjectService:
         """
         self.session = session
         self.project_repo = ProjectRepository(session)
-        self.snapshot_repo = SnapshotRepository(session)
         self.conversation_repo = ConversationRepository(session)
         self.branch_repo = BranchRepository(session)
 
@@ -47,10 +45,9 @@ class ProjectService:
 
         流程：
         1. 创建 Project 记录
-        2. 创建初始空 IRSnapshot（version=1）
-        3. 创建默认 Conversation（chat 模式）
-        4. 创建默认 ConversationBranch（branch_name="main"）
-        5. 设置 conversation.active_branch_id
+        2. 创建默认 Conversation（chat 模式）
+        3. 创建默认 ConversationBranch（branch_name="main"）
+        4. 设置 conversation.active_branch_id
 
         参数:
             user_id: 创建者的用户 UUID
@@ -68,11 +65,6 @@ class ProjectService:
         )
         project = await self.project_repo.create(project)
 
-        # 创建初始空快照
-        snapshot = await self.snapshot_repo.create_empty(
-            project_id=project.id,
-        )
-
         # 创建默认对话
         conversation = Conversation(
             project_id=project.id,
@@ -81,11 +73,10 @@ class ProjectService:
         )
         conversation = await self.conversation_repo.create(conversation)
 
-        # 创建默认分支，绑定到初始快照
+        # 创建默认分支
         branch = ConversationBranch(
             conversation_id=conversation.id,
             branch_name="main",
-            base_snapshot_id=snapshot.id,
         )
         branch = await self.branch_repo.create(branch)
 

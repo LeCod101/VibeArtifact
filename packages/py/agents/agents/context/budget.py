@@ -2,10 +2,10 @@
 上下文 Token 预算控制器模块。
 
 按优先级截断上下文，确保不超过模型的 token 限制。
-优先级规则（技术架构 5.2）：
+优先级规则：
 1. 当前任务目标（不截断）
-2. 当前快照 IR slice
-3. decision nodes
+2. 上游 Agent 输出
+3. 工作区文件
 4. 最近若干轮对话
 5. 历史摘要
 """
@@ -29,11 +29,10 @@ class ContextBudget:
     高优先级的内容优先保留，低优先级的内容在预算不足时被截断或丢弃。
 
     优先级从高到低：
-    1. IR 节点（核心数据，优先保留）
-    2. IR 边（结构关系，其次保留）
-    3. 决策节点（架构记录，第三保留）
-    4. 最近对话（上下文参考，第四保留）
-    5. 对话摘要（历史概要，最后保留）
+    1. 上游 Agent 输出（下游生成的直接依据，优先保留）
+    2. 工作区文件（已生成产物，其次保留）
+    3. 最近对话（上下文参考，第三保留）
+    4. 对话摘要（历史概要，最后保留）
     """
 
     def __init__(self, max_tokens: int = _DEFAULT_MAX_TOKENS) -> None:
@@ -54,48 +53,45 @@ class ContextBudget:
         - context_slice: 原始的上下文切片
         - 返回: 截断后的新 ContextSlice（不修改原对象）
         """
+        import json
+
         remaining_tokens = self.max_tokens
 
-        # 优先级 1：IR 节点
-        truncated_nodes, used = self._truncate_list_by_budget(
-            context_slice.ir_nodes,
+        # 优先级 1：上游 Agent 输出（整体保留或整体丢弃单个 Agent 的输出）
+        truncated_outputs: dict = {}
+        for agent_id, output in context_slice.upstream_outputs.items():
+            output_text = json.dumps(output, ensure_ascii=False, default=str)
+            output_tokens = self.estimate_tokens(output_text)
+            if output_tokens > remaining_tokens:
+                break
+            truncated_outputs[agent_id] = output
+            remaining_tokens -= output_tokens
+
+        # 优先级 2：工作区文件
+        truncated_files, used = self._truncate_list_by_budget(
+            context_slice.workspace_files,
             remaining_tokens,
         )
         remaining_tokens -= used
 
-        # 优先级 2：IR 边
-        truncated_edges, used = self._truncate_list_by_budget(
-            context_slice.ir_edges,
-            remaining_tokens,
-        )
-        remaining_tokens -= used
-
-        # 优先级 3：决策节点
-        truncated_decisions, used = self._truncate_list_by_budget(
-            context_slice.decision_nodes,
-            remaining_tokens,
-        )
-        remaining_tokens -= used
-
-        # 优先级 4：最近对话消息
+        # 优先级 3：最近对话消息
         truncated_messages, used = self._truncate_list_by_budget(
             context_slice.recent_messages,
             remaining_tokens,
         )
         remaining_tokens -= used
 
-        # 优先级 5：对话摘要（按字符截断）
+        # 优先级 4：对话摘要（按字符截断）
         truncated_summary = self._truncate_text_by_budget(
             context_slice.conversation_summary,
             remaining_tokens,
         )
 
         return ContextSlice(
-            ir_nodes=truncated_nodes,
-            ir_edges=truncated_edges,
+            workspace_files=truncated_files,
+            upstream_outputs=truncated_outputs,
             conversation_summary=truncated_summary,
             recent_messages=truncated_messages,
-            decision_nodes=truncated_decisions,
         )
 
     @staticmethod

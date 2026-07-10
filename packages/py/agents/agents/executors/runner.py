@@ -7,7 +7,7 @@
 3. PromptBuilder 拼装 prompt
 4. LLMProvider 调用模型
 5. 解析响应为 AgentOutput
-6. Translator 翻译为 IROperation
+6. file_extractor 提取工作区文件
 7. 返回结果
 """
 
@@ -27,6 +27,28 @@ from agents.context.assembler import ContextAssembler
 from agents.context.budget import ContextBudget
 from agents.prompts.builder import PromptBuilder
 from agents.schemas.base import AgentInput, AgentRunMeta
+
+
+def _strip_json_fences(content: str) -> str:
+    """
+    去除 LLM 输出中可能包裹 JSON 的 Markdown 代码围栏。
+
+    部分模型会无视"禁止在 JSON 之外输出任何内容"的约束，
+    以 ```json ... ``` 形式返回，此处做容错剥离。
+
+    - content: LLM 原始输出文本
+    - 返回: 剥离围栏后的文本（无围栏时原样返回）
+    """
+    text = content.strip()
+    if text.startswith("```"):
+        # 去掉第一行的 ```json 或 ```
+        first_newline = text.find("\n")
+        if first_newline != -1:
+            text = text[first_newline + 1:]
+        # 去掉结尾的 ```
+        if text.rstrip().endswith("```"):
+            text = text.rstrip()[:-3]
+    return text.strip()
 
 
 class AgentOutputParseError(Exception):
@@ -55,10 +77,10 @@ class AgentRunResult(BaseModel):
     """
     Agent 单次运行结果。
 
-    包含 Agent 的输出、翻译后的 IR 操作列表、警告信息和运行元信息。
+    包含 Agent 的输出、提取的工作区文件列表、警告信息和运行元信息。
     - agent_id: 执行的 Agent 唯一标识
     - output: Agent 的具体输出（BaseModel 子类实例）
-    - operations: 翻译后的 IROperation 字典列表
+    - files: 提取的工作区文件字典列表（path/content/kind）
     - warnings: 汇总的警告信息列表
     - meta: Agent 运行元信息（可选）
     """
@@ -68,7 +90,7 @@ class AgentRunResult(BaseModel):
 
     agent_id: str
     output: BaseModel
-    operations: list[dict] = []
+    files: list[dict] = []
     warnings: list[str] = []
     meta: AgentRunMeta | None = None
 
@@ -114,13 +136,13 @@ class AgentRunner:
         4. 确定模型 + 调用 LLM
         5. 解析输出
         6. 填充运行元信息
-        7. Translator 翻译为 IROperation
+        7. file_extractor 提取工作区文件
         8. 成本记账
         9. 返回 AgentRunResult
 
         - agent_id: Agent 唯一标识
         - agent_input: Agent 统一输入
-        - 返回: AgentRunResult，包含 output、operations、warnings
+        - 返回: AgentRunResult，包含 output、files、warnings
         """
         # 步骤 1：获取 Agent 配置
         config = self._registry.get(agent_id)
@@ -150,15 +172,15 @@ class AgentRunner:
             "请根据上述上下文和任务要求生成输出。"
         )
 
-        # 步骤 4：确定模型
-        model = get_model_for_tier(
+        # 步骤 4：确定模型（provider/model 二元组）
+        provider, model_name = get_model_for_tier(
             self._llm_config, config.model_tier
         )
 
         # 步骤 5：调用 LLM
         llm_request = LLMRequest(
             messages=[LLMMessage(**m) for m in messages],
-            model=model,
+            model=f"{provider}/{model_name}",
             metadata={
                 "agent_id": agent_id,
                 "project_id": str(agent_input.project_id),
@@ -168,7 +190,7 @@ class AgentRunner:
 
         # 步骤 6：解析输出
         try:
-            raw_output = json.loads(llm_response.content)
+            raw_output = json.loads(_strip_json_fences(llm_response.content))
             output = config.output_schema.model_validate(raw_output)
         except (json.JSONDecodeError, ValidationError) as exc:
             raise AgentOutputParseError(
@@ -188,13 +210,11 @@ class AgentRunner:
         )
         output.meta = meta
 
-        # 步骤 8：Translator 翻译为 IROperation
-        # 延迟导入，因为 translators 可能还在并行开发中
-        from agents.translators import get_translator
+        # 步骤 8：file_extractor 提取工作区文件
+        from agents.executors.file_extractor import extract_files
 
-        translator = get_translator(agent_id)
         high_level = getattr(output, config.high_level_key)
-        translator_result = translator.translate(high_level)
+        files = extract_files(agent_id, high_level)
 
         # 步骤 9：成本记账（如果有 tracker）
         if self._cost_tracker:
@@ -213,8 +233,8 @@ class AgentRunner:
         return AgentRunResult(
             agent_id=agent_id,
             output=output,
-            operations=translator_result.operations,
-            warnings=output.warnings + translator_result.warnings,
+            files=files,
+            warnings=output.warnings,
             meta=meta,
         )
 

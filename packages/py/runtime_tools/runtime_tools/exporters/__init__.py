@@ -1,7 +1,7 @@
 """
 导出器模块。
 
-提供从 IR 快照收集产物、打包 ZIP、生成 Docker 配置、本地存储等功能。
+提供从工作区文件收集产物、打包 ZIP、生成 Docker 配置、本地存储等功能。
 """
 
 from runtime_tools.exporters.collector import (

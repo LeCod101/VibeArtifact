@@ -53,9 +53,16 @@ class DAGParser:
         从 AgentRegistry 构建执行图。
 
         遍历所有已注册 agent，根据 dependencies 字段建立邻接表和入度表。
+        reviewer 类 agent（role_category == REVIEW）不进入 DAG——
+        它们由 conversation_graph 在配对 author 的执行步内多轮调用。
         如果依赖的 agent 不存在于注册表中，抛出 DAGParseError。
         """
-        agents = self._registry.list_agents()
+        from agents.configs.base import RoleCategory
+
+        agents = [
+            cfg for cfg in self._registry.list_agents()
+            if cfg.role_category != RoleCategory.REVIEW
+        ]
         self._forward = defaultdict(list)
         self._in_degree = {}
         self._all_agents = set()

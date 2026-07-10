@@ -5,7 +5,7 @@ Agent 单步执行 Celery 任务。
 1. 更新步骤状态为 running
 2. 组装 StepInput
 3. 调用 AgentRunner 执行 agent
-4. Translator 写入 IR
+4. 产物文件写入工作区（workspace_files）
 5. 更新步骤状态为 completed / failed
 
 超时限制：soft_time_limit=300（5 分钟）
@@ -36,7 +36,6 @@ def execute_agent_step(
     self,
     run_id: str,
     agent_id: str,
-    snapshot_id: str,
     step_input_json: str = "{}",
 ) -> dict:
     """
@@ -46,7 +45,6 @@ def execute_agent_step(
     - self: Celery task 实例（bind=True）
     - run_id: job_run ID（字符串形式的 UUID）
     - agent_id: 要执行的 agent 标识
-    - snapshot_id: 当前 IR 快照 ID
     - step_input_json: 步骤输入的 JSON 字符串
     返回执行结果字典，包含 agent_id, status, output_summary。
     """
@@ -57,7 +55,6 @@ def execute_agent_step(
             _execute_agent_step_async(
                 run_id=run_id,
                 agent_id=agent_id,
-                snapshot_id=snapshot_id,
                 step_input_json=step_input_json,
             )
         )
@@ -68,7 +65,6 @@ def execute_agent_step(
 async def _execute_agent_step_async(
     run_id: str,
     agent_id: str,
-    snapshot_id: str,
     step_input_json: str,
 ) -> dict:
     """
@@ -83,7 +79,6 @@ async def _execute_agent_step_async(
 
     - run_id: job_run ID
     - agent_id: agent 标识
-    - snapshot_id: 快照 ID
     - step_input_json: 步骤输入 JSON
     返回包含 agent_id, status, output_summary 的字典。
     """
@@ -122,12 +117,10 @@ async def _execute_agent_step_async(
         # 步骤 2：解析输入
         scope_draft = _parse_input(step_input_json)
 
-        # 步骤 3：调用 Agent 执行器
-        # Phase 1 占位实现 —— 实际的 AgentRunner 调用在 M5 阶段 2 接入
-        # 当前直接返回模拟结果
-        output_summary = await _run_agent_placeholder(
+        # 步骤 3：调用 Agent 执行器并写入工作区
+        output_summary = await _run_agent_and_store(
+            run_id=run_id,
             agent_id=agent_id,
-            snapshot_id=snapshot_id,
             scope_draft=scope_draft,
         )
 
@@ -205,29 +198,163 @@ def _parse_input(step_input_json: str) -> dict:
         return {}
 
 
-async def _run_agent_placeholder(
+async def _run_agent_and_store(
+    run_id: str,
     agent_id: str,
-    snapshot_id: str,
     scope_draft: dict,
 ) -> dict:
     """
-    Agent 执行占位实现。
+    执行单个 Agent 并将产物文件写入工作区。
 
-    Phase 1 阶段的桩函数，返回模拟结果。
-    M5 阶段 2 将替换为真正的 AgentRunner 调用：
-    1. 从 AgentRegistry 获取 AgentConfig
-    2. 组装 AgentInput
-    3. 调用 AgentRunner.run()
-    4. 通过 Translator 写入 IR 快照
+    真实分发：
+    - 配对 agent（backend/frontend/doc/diagram，见 REVIEW_PAIRS）走
+      ConversationGraph author↔reviewer 多轮循环，轮次记录落库
+      conversation_turns，轮次事件经 SSE 发布
+    - 其余单轮 agent 走 AgentRunner 一次调用
+
+    未配置任何 LLM API Key 时退化为占位实现，保证本地/CI 无 Key
+    环境仍可跑通编排全链路。
+
+    - run_id: job_run ID
+    - agent_id: agent 标识
+    - scope_draft: scope_draft 数据
+    返回输出摘要字典。
+    """
+    from runtime_tools.llm.config import LLMConfig
+
+    llm_config = LLMConfig.from_env()
+    if not llm_config.api_keys:
+        logger.warning(
+            "未配置任何 LLM API Key，Agent '%s' 使用占位执行", agent_id,
+        )
+        return _placeholder_summary(agent_id)
+
+    from agents.configs.definitions import REVIEW_PAIRS, register_all_agents
+    from agents.executors.runner import AgentRunner
+    from agents.schemas.base import AgentInput
+    from platform_data.repositories.review_turn_repo import (
+        ReviewTurnRepository,
+    )
+    from platform_data.repositories.workspace_repo import WorkspaceRepository
+    from runtime_tools.llm.provider import LangChainProvider
+
+    from worker_app.orchestrator.run_manager import (
+        RunManager,
+        get_worker_session_factory,
+    )
+
+    # 查询 run 归属项目，构建 AgentInput
+    manager = RunManager()
+    run_info = await manager.get_run_status(UUID(run_id))
+    project_id = UUID(run_info["project_id"])
+
+    registry = register_all_agents()
+    runner = AgentRunner(
+        llm_provider=LangChainProvider(),
+        registry=registry,
+        llm_config=llm_config,
+    )
+
+    task_description = scope_draft.get("task_description") or json.dumps(
+        scope_draft, ensure_ascii=False,
+    )
+
+    agent_input = AgentInput(
+        project_id=project_id,
+        run_id=UUID(run_id),
+        workspace_files=[],
+        upstream_outputs={},
+        conversation_context=[],
+        task_description=task_description,
+        extra=scope_draft,
+    )
+
+    reviewer_id = REVIEW_PAIRS.get(agent_id)
+    turns: list[dict] = []
+    warnings: list[str] = []
+    summary_extra: dict = {}
+
+    if reviewer_id is not None:
+        # ── 配对 agent：author↔reviewer 多轮循环 ──
+        from agents.executors.conversation_graph import ConversationGraph
+
+        graph = ConversationGraph(
+            runner=runner,
+            on_event=_make_review_event_publisher(run_id),
+        )
+        pair_result = await graph.run_pair(
+            author_id=agent_id,
+            reviewer_id=reviewer_id,
+            agent_input=agent_input,
+        )
+        files = list(pair_result.files)
+        warnings = list(pair_result.warnings)
+        turns = [t.model_dump(mode="json") for t in pair_result.turns]
+        summary_extra = {
+            "review_rounds": pair_result.rounds,
+            "review_approved": pair_result.approved,
+        }
+    else:
+        # ── 单轮 agent ──
+        result = await runner.run(agent_id, agent_input)
+        files = list(result.files)
+        warnings = list(result.warnings)
+
+    # 产物文件与轮次记录写入数据库
+    for f in files:
+        f["agent"] = agent_id
+
+    files_written = 0
+    if files or turns:
+        session_factory = get_worker_session_factory()
+        async with session_factory() as session:
+            if files:
+                workspace_repo = WorkspaceRepository(session)
+                files_written = await workspace_repo.write_files(
+                    UUID(run_id), files,
+                )
+            if turns:
+                turn_repo = ReviewTurnRepository(session)
+                await turn_repo.write_turns(UUID(run_id), turns)
+            await session.commit()
+
+    logger.info(
+        "Agent '%s' 执行完成: %d 个文件写入工作区, %d 条轮次记录",
+        agent_id, files_written, len(turns),
+    )
+
+    return {
+        "agent_id": agent_id,
+        "files_written": files_written,
+        "warnings": warnings,
+        **summary_extra,
+    }
+
+
+def _make_review_event_publisher(run_id: str):
+    """
+    构建评审轮次事件的 SSE 发布回调。
+
+    - run_id: job_run ID（用作 SSE 频道标识）
+    返回 async (event, payload) -> None 回调。
+    """
+    from api_app.api.sse.publisher import publish_step_event
+
+    async def _publish(event: str, payload: dict) -> None:
+        await publish_step_event(run_id, event, payload)
+
+    return _publish
+
+
+def _placeholder_summary(agent_id: str) -> dict:
+    """
+    无 LLM Key 环境下的占位执行结果。
 
     - agent_id: agent 标识
-    - snapshot_id: 快照 ID
-    - scope_draft: scope_draft 数据
     返回模拟的输出摘要字典。
     """
     return {
         "agent_id": agent_id,
-        "snapshot_id": snapshot_id,
         "placeholder": True,
-        "message": f"Agent '{agent_id}' 占位执行完成，等待 M5 阶段 2 接入真实执行器",
+        "message": f"Agent '{agent_id}' 占位执行完成（未配置 LLM API Key）",
     }

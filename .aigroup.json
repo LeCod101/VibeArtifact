@@ -1,0 +1,22 @@
+{
+  "version": "2.0.0",
+  "targets": [
+    "claude"
+  ],
+  "modules": [
+    "quality",
+    "workflow",
+    "backend",
+    "database",
+    "product",
+    "python",
+    "frontend"
+  ],
+  "agentModules": [
+    "agents-core",
+    "agents-quality",
+    "agents-language"
+  ],
+  "installedAt": "2026-07-09",
+  "updatedAt": "2026-07-09"
+}

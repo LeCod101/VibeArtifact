@@ -112,10 +112,12 @@ class TestGetRolePrompt:
         assert "Intent Agent" in prompt
 
     def test_get_role_prompt_all_agents(self):
-        """所有 10 个 agent 的 role prompt 均可正常获取。"""
+        """所有 13 个 agent 的 role prompt 均可正常获取。"""
         agent_names = [
             "intent", "contraction", "planner", "schema",
-            "backend", "frontend", "doc", "diagram", "qa", "export",
+            "backend", "frontend", "doc", "diagram", "export",
+            "backend_reviewer", "frontend_reviewer",
+            "doc_reviewer", "diagram_reviewer",
         ]
         for name in agent_names:
             prompt = get_role_prompt(name)

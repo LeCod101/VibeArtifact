@@ -44,18 +44,18 @@ def make_failed_suite(gate_name: str = "backend") -> GateSuiteResult:
     return GateSuiteResult(results=results)
 
 
-def make_nodes() -> list[dict]:
-    """构造最小 IR 节点列表（code + doc + diagram）。"""
+def make_files() -> list[dict]:
+    """构造最小工作区文件列表（code + doc）。"""
     return [
         {
-            "node_type": "code",
-            "props": {"path": "backend/main.py", "content": "def hello(): pass", "language": "python"},
-            "label": "main.py",
+            "file_path": "backend/main.py",
+            "content": "def hello(): pass",
+            "file_kind": "code",
         },
         {
-            "node_type": "doc",
-            "props": {"path": "README.md", "content": "# Project", "format": "markdown"},
-            "label": "README",
+            "file_path": "README.md",
+            "content": "# Project",
+            "file_kind": "doc",
         },
     ]
 
@@ -87,10 +87,9 @@ class TestRepairLoop:
         with patch.object(
             loop._gate_runner, "run_all", return_value=make_passed_suite()
         ), patch.object(
-            loop, "load_snapshot_nodes", new_callable=AsyncMock, return_value=make_nodes()
+            loop, "load_workspace_files", new_callable=AsyncMock, return_value=make_files()
         ):
             result = await loop.run_gates_and_repair(
-                snapshot_id=str(uuid4()),
                 scope_draft_json="{}",
             )
 
@@ -118,14 +117,13 @@ class TestRepairLoop:
         with patch.object(
             loop._gate_runner, "run_all", side_effect=gate_side_effect
         ), patch.object(
-            loop, "load_snapshot_nodes", new_callable=AsyncMock, return_value=make_nodes()
+            loop, "load_workspace_files", new_callable=AsyncMock, return_value=make_files()
         ), patch(
             "runtime_tools.gates.repair_loop.RepairLoop._retry_agents",
             new_callable=AsyncMock,
-            return_value=make_nodes(),
+            return_value=make_files(),
         ):
             result = await loop.run_gates_and_repair(
-                                snapshot_id=str(uuid4()),
                 scope_draft_json="{}",
             )
 
@@ -144,17 +142,16 @@ class TestRepairLoop:
         with patch.object(
             loop._gate_runner, "run_all", return_value=make_failed_suite("backend")
         ), patch.object(
-            loop, "load_snapshot_nodes", new_callable=AsyncMock, return_value=make_nodes()
+            loop, "load_workspace_files", new_callable=AsyncMock, return_value=make_files()
         ), patch(
             "runtime_tools.gates.repair_loop.RepairLoop._retry_agents",
             new_callable=AsyncMock,
-            return_value=make_nodes(),
+            return_value=make_files(),
         ), patch(
             "runtime_tools.gates.repair_loop.RepairLoop._mark_needs_attention",
             new_callable=AsyncMock,
         ) as mock_mark:
             result = await loop.run_gates_and_repair(
-                                snapshot_id=str(uuid4()),
                 scope_draft_json="{}",
             )
 
@@ -180,13 +177,12 @@ class TestRepairLoop:
         with patch.object(
             loop._gate_runner, "run_all", return_value=unknown_suite
         ), patch.object(
-            loop, "load_snapshot_nodes", new_callable=AsyncMock, return_value=make_nodes()
+            loop, "load_workspace_files", new_callable=AsyncMock, return_value=make_files()
         ), patch(
             "runtime_tools.gates.repair_loop.RepairLoop._mark_needs_attention",
             new_callable=AsyncMock,
         ) as mock_mark:
             result = await loop.run_gates_and_repair(
-                                snapshot_id=str(uuid4()),
                 scope_draft_json="{}",
             )
 

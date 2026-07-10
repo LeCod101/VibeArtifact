@@ -1,69 +1,38 @@
 """
-M7 ImpactAnalyzer 单元测试。
+ImpactAnalyzer 单元测试。
 
 覆盖：
-- 冷启动检测（空 IR 触发）
+- 冷启动检测（空工作区触发）
 - 关键词匹配各类 Agent（frontend/backend/schema/doc/diagram）
 - 全局变更和全量重建关键词
 - 变更范围判定（FULL/PARTIAL）
 - 无匹配时回退到 planner
-- affected_node_types 从 agents 的正确映射
-- 1 跳邻居扩展
+- affected_agents 到 affected_areas 的正确映射
 - user_intent_summary 截断
 - 多关键词匹配去重
 - COSMETIC scope 边界条件
 """
 
-from uuid import uuid4
-
-from agents.analysis.impact_analyzer import _AGENT_NODE_TYPES, ImpactAnalyzer
+from agents.analysis.impact_analyzer import AGENT_AREA_MAP, ImpactAnalyzer
 from agents.analysis.models import ChangeScope
-from ir_core.schema.data import IREdgeData, IRNodeData
+from agents.schemas.workspace import WorkspaceFileData
 
 # ============================================================
 # 测试辅助函数
 # ============================================================
 
 
-def make_test_node(node_type: str, label: str = "test") -> IRNodeData:
+def make_test_file(path: str = "backend/main.py") -> WorkspaceFileData:
     """
-    构造测试用 IR 节点。
+    构造测试用工作区文件。
 
     参数：
-        node_type: 节点类型
-        label: 节点显示标签
+        path: 文件路径
 
     返回：
-        IRNodeData 实例
+        WorkspaceFileData 实例
     """
-    return IRNodeData(
-        id=uuid4(),
-        node_type=node_type,
-        label=label,
-        props={},
-    )
-
-
-def make_test_edge(
-    source_id, target_id, edge_type: str = "references"
-) -> IREdgeData:
-    """
-    构造测试用 IR 边。
-
-    参数：
-        source_id: 源节点 ID
-        target_id: 目标节点 ID
-        edge_type: 边类型
-
-    返回：
-        IREdgeData 实例
-    """
-    return IREdgeData(
-        id=uuid4(),
-        source_node_id=source_id,
-        target_node_id=target_id,
-        edge_type=edge_type,
-    )
+    return WorkspaceFileData(path=path, content="x", kind="code")
 
 
 # ============================================================
@@ -80,12 +49,11 @@ class TestImpactAnalyzer:
 
     # ── 冷启动检测 ──
 
-    def test_empty_ir_triggers_cold_start(self):
-        """ir_nodes 为空列表时触发冷启动，change_scope 为 FULL。"""
+    def test_empty_workspace_triggers_cold_start(self):
+        """workspace_files 为空列表时触发冷启动，change_scope 为 FULL。"""
         report = self.analyzer.analyze(
             user_message="创建一个 Todo 应用",
-            ir_nodes=[],
-            ir_edges=[],
+            workspace_files=[],
         )
         assert report.requires_cold_start is True
         assert report.change_scope == ChangeScope.FULL
@@ -98,53 +66,48 @@ class TestImpactAnalyzer:
 
     def test_frontend_keywords(self):
         """包含前端关键词"修改页面布局"时，affected_agents 包含 frontend。"""
-        nodes = [make_test_node("scope", "功能模块")]
+        files = [make_test_file()]
         report = self.analyzer.analyze(
             user_message="修改页面布局",
-            ir_nodes=nodes,
-            ir_edges=[],
+            workspace_files=files,
         )
         assert "frontend" in report.affected_agents
         assert report.requires_cold_start is False
 
     def test_backend_keywords(self):
         """包含后端关键词"添加新的API接口"时，affected_agents 包含 backend。"""
-        nodes = [make_test_node("scope", "功能模块")]
+        files = [make_test_file()]
         report = self.analyzer.analyze(
             user_message="添加新的API接口",
-            ir_nodes=nodes,
-            ir_edges=[],
+            workspace_files=files,
         )
         assert "backend" in report.affected_agents
 
     def test_schema_keywords(self):
         """包含数据模型关键词"新增一个数据库表"时，affected_agents 包含 schema 和 backend。"""
-        nodes = [make_test_node("scope", "功能模块")]
+        files = [make_test_file()]
         report = self.analyzer.analyze(
             user_message="新增一个数据库表",
-            ir_nodes=nodes,
-            ir_edges=[],
+            workspace_files=files,
         )
         assert "schema" in report.affected_agents
         assert "backend" in report.affected_agents
 
     def test_doc_keywords(self):
         """包含文档关键词"更新README文档"时，affected_agents 包含 doc。"""
-        nodes = [make_test_node("scope", "功能模块")]
+        files = [make_test_file()]
         report = self.analyzer.analyze(
             user_message="更新README文档",
-            ir_nodes=nodes,
-            ir_edges=[],
+            workspace_files=files,
         )
         assert "doc" in report.affected_agents
 
     def test_diagram_keywords(self):
         """包含图表关键词"重画架构图"时，affected_agents 包含 diagram。"""
-        nodes = [make_test_node("scope", "功能模块")]
+        files = [make_test_file()]
         report = self.analyzer.analyze(
             user_message="重画架构图",
-            ir_nodes=nodes,
-            ir_edges=[],
+            workspace_files=files,
         )
         assert "diagram" in report.affected_agents
 
@@ -152,11 +115,10 @@ class TestImpactAnalyzer:
 
     def test_global_change_keywords(self):
         """包含全局变更关键词"把登录改成手机号"时，涉及 schema/backend/frontend。"""
-        nodes = [make_test_node("scope", "功能模块")]
+        files = [make_test_file()]
         report = self.analyzer.analyze(
             user_message="把登录改成手机号",
-            ir_nodes=nodes,
-            ir_edges=[],
+            workspace_files=files,
         )
         assert "schema" in report.affected_agents
         assert "backend" in report.affected_agents
@@ -164,11 +126,10 @@ class TestImpactAnalyzer:
 
     def test_full_rebuild_keywords(self):
         """包含全量重建关键词"全部重来"时，change_scope 为 FULL。"""
-        nodes = [make_test_node("scope", "功能模块")]
+        files = [make_test_file()]
         report = self.analyzer.analyze(
             user_message="全部重来",
-            ir_nodes=nodes,
-            ir_edges=[],
+            workspace_files=files,
         )
         assert report.change_scope == ChangeScope.FULL
         # 全量重建时包含所有主要 Agent
@@ -181,11 +142,10 @@ class TestImpactAnalyzer:
 
     def test_partial_scope(self):
         """单个关键词匹配时，change_scope 为 PARTIAL（1-2 种 Agent）。"""
-        nodes = [make_test_node("scope", "功能模块")]
+        files = [make_test_file()]
         report = self.analyzer.analyze(
             user_message="修改页面上的按钮",
-            ir_nodes=nodes,
-            ir_edges=[],
+            workspace_files=files,
         )
         # 只匹配 frontend，1 个 Agent → PARTIAL
         assert report.change_scope == ChangeScope.PARTIAL
@@ -194,60 +154,37 @@ class TestImpactAnalyzer:
 
     def test_no_match_fallback(self):
         """无任何关键词匹配时，回退到 planner，change_scope 为 PARTIAL。"""
-        nodes = [make_test_node("scope", "功能模块")]
+        files = [make_test_file()]
         report = self.analyzer.analyze(
             user_message="做点什么",
-            ir_nodes=nodes,
-            ir_edges=[],
+            workspace_files=files,
         )
         assert report.affected_agents == ["planner"]
         assert report.change_scope == ChangeScope.PARTIAL
 
-    # ── 节点类型映射 ──
+    # ── 产物领域映射 ──
 
-    def test_affected_node_types_from_agents(self):
-        """affected_agents 正确映射到 affected_node_types。"""
-        nodes = [make_test_node("scope", "功能模块")]
+    def test_affected_areas_from_agents(self):
+        """affected_agents 正确映射到 affected_areas。"""
+        files = [make_test_file()]
         report = self.analyzer.analyze(
             user_message="修改页面布局",
-            ir_nodes=nodes,
-            ir_edges=[],
+            workspace_files=files,
         )
-        # frontend Agent 对应的节点类型
-        expected_types = _AGENT_NODE_TYPES.get("frontend", [])
-        for nt in expected_types:
-            assert nt in report.affected_node_types
-
-    # ── 图遍历扩展邻居 ──
-
-    def test_graph_traversal_expands_neighbors(self):
-        """有 edges 时，1 跳邻居被加入 affected_node_ids。"""
-        # 创建一个 ui_page 节点和一个 entity 节点，通过边连接
-        ui_node = make_test_node("ui_page", "首页")
-        entity_node = make_test_node("entity", "用户表")
-        edge = make_test_edge(ui_node.id, entity_node.id)
-
-        report = self.analyzer.analyze(
-            user_message="修改页面布局",
-            ir_nodes=[ui_node, entity_node],
-            ir_edges=[edge],
-        )
-
-        # ui_page 节点被 frontend Agent 直接命中
-        assert ui_node.id in report.affected_node_ids
-        # entity 节点通过 1 跳邻居扩展被包含
-        assert entity_node.id in report.affected_node_ids
+        # frontend Agent 对应的产物领域
+        expected_areas = AGENT_AREA_MAP.get("frontend", [])
+        for area in expected_areas:
+            assert area in report.affected_areas
 
     # ── 用户意图摘要截断 ──
 
     def test_user_intent_summary(self):
         """长消息被截断到 100 字符。"""
         long_message = "这是一段很长的需求描述" * 20
-        nodes = [make_test_node("scope", "功能模块")]
+        files = [make_test_file()]
         report = self.analyzer.analyze(
             user_message=long_message,
-            ir_nodes=nodes,
-            ir_edges=[],
+            workspace_files=files,
         )
         assert len(report.user_intent_summary) <= 100
 
@@ -255,12 +192,11 @@ class TestImpactAnalyzer:
 
     def test_multiple_keyword_matches(self):
         """同时匹配多个关键词时，agents 列表去重。"""
-        nodes = [make_test_node("scope", "功能模块")]
+        files = [make_test_file()]
         # "添加API接口的页面布局" 同时匹配 backend 和 frontend
         report = self.analyzer.analyze(
             user_message="添加API接口的页面布局",
-            ir_nodes=nodes,
-            ir_edges=[],
+            workspace_files=files,
         )
         # 确认 agents 列表中无重复
         assert len(report.affected_agents) == len(set(report.affected_agents))

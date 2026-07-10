@@ -23,15 +23,12 @@ class ArtifactStatus(enum.Enum):
 
 
 class Artifact(UUIDPrimaryKeyMixin, TimestampMixin, Base):
-    """产物表，绑定项目和快照，记录产物类型、路径、状态。"""
+    """产物表，绑定项目，记录产物类型、路径、状态。"""
 
     __tablename__ = "artifacts"
 
     project_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("projects.id"), nullable=False, index=True,
-    )
-    snapshot_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("ir_snapshots.id"), nullable=False, index=True,
     )
     kind: Mapped[str] = mapped_column(String(100), nullable=False)
     path: Mapped[str] = mapped_column(String(500), nullable=False)

@@ -1,9 +1,9 @@
 """
-M7 ChatOrchestrator 集成测试。
+ChatOrchestrator 集成测试。
 
 覆盖：
-- 冷启动路径（空 IR → ColdStartBootstrap）
-- 局部修改路径（有 IR → AgentSelector + AgentRunner）
+- 冷启动路径（空工作区 → ColdStartBootstrap）
+- 局部修改路径（有工作区文件 → AgentSelector + AgentRunner）
 - assistant_message 非空
 - change_summary 包含正确信息
 - impact_report 正确传递
@@ -11,7 +11,6 @@ M7 ChatOrchestrator 集成测试。
 - SSE 事件发布验证
 - redis=None 时不报错
 - Agent 执行失败的容错处理
-- apply_operations 失败的容错处理
 - 全局异常兜底
 - 空执行计划处理
 """
@@ -24,38 +23,28 @@ from agents.analysis.cold_start import ColdStartResult
 from agents.analysis.models import ChangeScope, ImpactReport
 from agents.executors.runner import AgentRunResult
 from agents.schemas.base import AgentOutput, AgentRunMeta
+from agents.schemas.workspace import WorkspaceFileData
 from api_app.application.services.chat_orchestrator import (
     ChatOrchestrator,
     ChatOrchestratorResult,
 )
-from ir_core.operations.apply import ApplyError
-from ir_core.schema.data import IRNodeData
-from ir_core.validators.result import ValidationResult
 
 # ============================================================
 # 测试辅助函数
 # ============================================================
 
 
-def make_test_node(
-    node_type: str = "scope", label: str = "test"
-) -> IRNodeData:
+def make_test_file(path: str = "frontend/app/page.tsx") -> WorkspaceFileData:
     """
-    构造测试用 IR 节点。
+    构造测试用工作区文件。
 
     参数：
-        node_type: 节点类型
-        label: 节点标签
+        path: 文件路径
 
     返回：
-        IRNodeData 实例
+        WorkspaceFileData 实例
     """
-    return IRNodeData(
-        id=uuid4(),
-        node_type=node_type,
-        label=label,
-        props={},
-    )
+    return WorkspaceFileData(path=path, content="x", kind="code")
 
 
 def make_cold_start_report() -> ImpactReport:
@@ -68,12 +57,11 @@ def make_cold_start_report() -> ImpactReport:
     return ImpactReport(
         change_scope=ChangeScope.FULL,
         requires_cold_start=True,
-        affected_node_types=[],
-        affected_node_ids=[],
+        affected_areas=[],
         affected_agents=[
             "intent", "contraction", "planner", "schema"
         ],
-        reasoning="IR 图为空，需要冷启动",
+        reasoning="工作区为空，需要冷启动",
         user_intent_summary="创建 Todo 应用",
     )
 
@@ -88,8 +76,7 @@ def make_partial_report() -> ImpactReport:
     return ImpactReport(
         change_scope=ChangeScope.PARTIAL,
         requires_cold_start=False,
-        affected_node_types=["ui_page", "ui_component"],
-        affected_node_ids=[],
+        affected_areas=["ui_page", "ui_component"],
         affected_agents=["frontend"],
         reasoning="关键词匹配命中 frontend",
         user_intent_summary="修改页面布局",
@@ -98,7 +85,7 @@ def make_partial_report() -> ImpactReport:
 
 def make_agent_run_result(
     agent_id: str = "frontend",
-    operations: list | None = None,
+    files: list[dict] | None = None,
     cost: float = 0.01,
     warnings: list[str] | None = None,
 ) -> AgentRunResult:
@@ -107,7 +94,7 @@ def make_agent_run_result(
 
     参数：
         agent_id: Agent 标识
-        operations: 操作列表
+        files: 产物文件列表
         cost: 总成本
         warnings: 警告列表
 
@@ -115,8 +102,8 @@ def make_agent_run_result(
         AgentRunResult 实例
     """
     meta = AgentRunMeta(
-        model="gpt-4",
-        provider="openai",
+        model="deepseek-chat",
+        provider="deepseek",
         prompt_tokens=100,
         completion_tokens=50,
         total_cost=cost,
@@ -131,30 +118,32 @@ def make_agent_run_result(
     return AgentRunResult(
         agent_id=agent_id,
         output=output,
-        operations=operations or [],
+        files=files or [],
         warnings=warnings or [],
         meta=meta,
     )
 
 
 def make_cold_start_result(
-    nodes: list[IRNodeData] | None = None,
-    operations_count: int = 5,
+    outputs: dict | None = None,
+    files_count: int = 0,
 ) -> ColdStartResult:
     """
     构造模拟的 ColdStartResult。
 
     参数：
-        nodes: 节点列表
-        operations_count: 操作数
+        outputs: 各 Agent 高层输出
+        files_count: 产出文件数
 
     返回：
         ColdStartResult 实例
     """
     return ColdStartResult(
-        ir_nodes=nodes or [make_test_node()],
-        ir_edges=[],
-        operations_applied=operations_count,
+        outputs=outputs or {"intent": {}, "contraction": {}, "planner": {}, "schema": {}},
+        files=[
+            {"path": f"docs/{i}.md", "content": "x", "kind": "doc"}
+            for i in range(files_count)
+        ],
         agents_executed=[
             "intent", "contraction", "planner", "schema"
         ],
@@ -177,16 +166,14 @@ class TestChatOrchestrator:
             "project_id": uuid4(),
             "conversation_id": uuid4(),
             "branch_id": uuid4(),
-            "snapshot_id": uuid4(),
             "user_message": "创建 Todo 应用",
-            "ir_nodes": [],
-            "ir_edges": [],
+            "workspace_files": [],
             "redis": None,
         }
 
     @pytest.mark.asyncio
     async def test_cold_start_path(self, base_params):
-        """空 IR 时走冷启动路径，调用 ColdStartBootstrap。"""
+        """空工作区时走冷启动路径，调用 ColdStartBootstrap。"""
         orchestrator = ChatOrchestrator()
 
         with (
@@ -217,9 +204,8 @@ class TestChatOrchestrator:
 
     @pytest.mark.asyncio
     async def test_partial_modification_path(self, base_params):
-        """有 IR 时走局部修改路径，调用 AgentSelector + AgentRunner。"""
-        # 传入非空的 ir_nodes
-        base_params["ir_nodes"] = [make_test_node("ui_page", "首页")]
+        """有工作区文件时走局部修改路径，调用 AgentSelector + AgentRunner。"""
+        base_params["workspace_files"] = [make_test_file()]
         base_params["user_message"] = "修改页面布局"
 
         orchestrator = ChatOrchestrator()
@@ -275,7 +261,7 @@ class TestChatOrchestrator:
         """change_summary 包含正确的 agents_executed 和 operations_count。"""
         orchestrator = ChatOrchestrator()
 
-        cold_result = make_cold_start_result(operations_count=10)
+        cold_result = make_cold_start_result(files_count=10)
 
         with (
             patch.object(
@@ -300,7 +286,8 @@ class TestChatOrchestrator:
             result = await orchestrator.handle_message(**base_params)
 
             summary = result.change_summary
-            assert summary.operations_count == 10
+            # outputs(4) + files(10) = 14
+            assert summary.operations_count == 14
             assert len(summary.agents_executed) == 4
             assert isinstance(summary.affected_areas, list)
 
@@ -331,21 +318,19 @@ class TestChatOrchestrator:
 
             result = await orchestrator.handle_message(**base_params)
 
-            # 空 IR 应该触发冷启动
+            # 空工作区应该触发冷启动
             assert result.impact_report.requires_cold_start is True
             assert result.impact_report.change_scope == ChangeScope.FULL
 
     @pytest.mark.asyncio
     async def test_cost_accumulated(self, base_params):
         """多个 Agent 的 cost 累加到 result.cost_total。"""
-        # 设置非空 IR 走局部修改路径
-        base_params["ir_nodes"] = [make_test_node("ui_page", "首页")]
+        base_params["workspace_files"] = [make_test_file()]
         base_params["user_message"] = "修改页面布局"
 
         orchestrator = ChatOrchestrator()
 
         mock_runner = AsyncMock()
-        # frontend Agent 返回 cost=0.05
         mock_runner.run = AsyncMock(
             return_value=make_agent_run_result("frontend", cost=0.05)
         )
@@ -357,7 +342,6 @@ class TestChatOrchestrator:
         ):
             result = await orchestrator.handle_message(**base_params)
 
-            # cost_total 应该大于 0
             assert result.cost_total >= 0.0
 
     @pytest.mark.asyncio
@@ -406,7 +390,6 @@ class TestChatOrchestrator:
 
             await orchestrator.handle_message(**base_params)
 
-            # 验证关键 SSE 事件被调用
             mock_analysis_start.assert_called_once()
             mock_analysis_done.assert_called_once()
             mock_apply_done.assert_called_once()
@@ -439,20 +422,18 @@ class TestChatOrchestrator:
                 "intent", "contraction", "planner", "schema"
             ]
 
-            # 不应抛异常
             result = await orchestrator.handle_message(**base_params)
             assert isinstance(result, ChatOrchestratorResult)
 
     @pytest.mark.asyncio
     async def test_agent_failure_handled(self, base_params):
         """Agent 执行失败时不崩溃，返回正常结果。"""
-        base_params["ir_nodes"] = [make_test_node("ui_page", "首页")]
+        base_params["workspace_files"] = [make_test_file()]
         base_params["user_message"] = "修改页面布局"
 
         orchestrator = ChatOrchestrator()
 
         mock_runner = AsyncMock()
-        # Agent 调用抛异常
         mock_runner.run = AsyncMock(
             side_effect=RuntimeError("LLM 调用失败")
         )
@@ -465,50 +446,6 @@ class TestChatOrchestrator:
             # 不应崩溃（_execute_layer 捕获异常并构建 mock result）
             result = await orchestrator.handle_message(**base_params)
             assert isinstance(result, ChatOrchestratorResult)
-
-    @pytest.mark.asyncio
-    async def test_apply_failure_handled(self, base_params):
-        """apply_operations 失败时记录 warning，不崩溃。"""
-        base_params["ir_nodes"] = [make_test_node("ui_page", "首页")]
-        base_params["user_message"] = "修改页面布局"
-
-        orchestrator = ChatOrchestrator()
-
-        mock_runner = AsyncMock()
-        # Agent 返回有操作的结果
-        mock_runner.run = AsyncMock(
-            return_value=make_agent_run_result(
-                "frontend",
-                operations=[
-                    {"operation_type": "create_node", "bad": "data"}
-                ],
-            )
-        )
-
-        with (
-            patch.object(
-                ChatOrchestrator,
-                "_create_agent_runner",
-                return_value=mock_runner,
-            ),
-            patch(
-                "api_app.application.services.chat_orchestrator"
-                ".apply_operations"
-            ) as mock_apply,
-        ):
-            mock_apply.side_effect = ApplyError(
-                "校验失败",
-                ValidationResult.fail(["invalid"]),
-            )
-
-            result = await orchestrator.handle_message(**base_params)
-
-            assert isinstance(result, ChatOrchestratorResult)
-            # apply 失败应记录 warning
-            assert any(
-                "应用失败" in w
-                for w in result.change_summary.warnings
-            )
 
     @pytest.mark.asyncio
     async def test_global_exception_returns_error(self, base_params):
@@ -534,17 +471,17 @@ class TestChatOrchestrator:
     @pytest.mark.asyncio
     async def test_empty_execution_plan(self, base_params):
         """AgentSelector 返回空计划时正常完成，operations_count=0。"""
-        base_params["ir_nodes"] = [make_test_node("scope", "功能模块")]
+        base_params["workspace_files"] = [make_test_file()]
         # 使用无匹配关键词的消息
         base_params["user_message"] = "做点什么"
 
         orchestrator = ChatOrchestrator()
 
         mock_runner = AsyncMock()
-        # planner Agent 返回空操作
+        # planner Agent 无文件产出
         mock_runner.run = AsyncMock(
             return_value=make_agent_run_result(
-                "planner", operations=[]
+                "planner", files=[]
             )
         )
 

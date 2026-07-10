@@ -1,19 +1,19 @@
 """
 冷启动引导器模块。
 
-当项目 IR 为空时，执行最小 Agent 链路建立基础 IR：
+当项目工作区为空时，执行最小 Agent 链路建立基础上下文：
 intent -> contraction -> planner -> schema
 
-产出：scope 节点 + risk 节点 + task 节点 + entity 节点 + endpoint 节点
+产出：各 Agent 的高层输出（scope/task/schema 决策），
+通过 upstream_outputs 逐级传递给后续 Agent。
 """
 
 from __future__ import annotations
 
 import logging
+from typing import Any
 from uuid import UUID
 
-from ir_core.operations.apply import ApplyError, apply_operations
-from ir_core.schema.data import IREdgeData, IRNodeData
 from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
@@ -23,19 +23,15 @@ class ColdStartResult(BaseModel):
     """
     冷启动结果。
 
-    记录冷启动过程中产生的 IR 数据和执行统计信息。
-    - new_snapshot_id: 新快照 ID（由调用方设置，此处预留）
-    - ir_nodes: 冷启动后的所有节点列表
-    - ir_edges: 冷启动后的所有边列表
-    - operations_applied: 成功应用的操作总数
+    记录冷启动过程中产生的 Agent 输出和执行统计信息。
+    - outputs: 各 Agent 的高层输出（agent_id → 输出字典）
+    - files: 冷启动产生的工作区文件列表（决策型 Agent 通常为空）
     - agents_executed: 成功执行的 Agent ID 列表
     - warnings: 过程中产生的警告信息列表
     """
 
-    new_snapshot_id: UUID | None = None
-    ir_nodes: list[IRNodeData] = []
-    ir_edges: list[IREdgeData] = []
-    operations_applied: int = 0
+    outputs: dict[str, Any] = {}
+    files: list[dict] = []
     agents_executed: list[str] = []
     warnings: list[str] = []
 
@@ -44,16 +40,16 @@ class ColdStartBootstrap:
     """
     冷启动引导器。
 
-    当项目 IR 为空时，按固定顺序执行最小 Agent 链路：
+    当项目工作区为空时，按固定顺序执行最小 Agent 链路：
     intent -> contraction -> planner -> schema
 
-    每步构建 AgentInput，调用 AgentRunner.run()，
-    将产出的 operations 应用到累积的 IR 上。
+    每步构建 AgentInput（携带前序 Agent 的输出作为上下文），
+    调用 AgentRunner.run()，将高层输出累积到 upstream_outputs。
 
     设计要点：
     - 不做数据库持久化，只返回内存中的结果
     - 单个 Agent 失败不中断整个冷启动流程
-    - 调用方负责快照创建和 DB 写入
+    - 调用方负责结果的落库与展示
     """
 
     # 冷启动依次执行的 Agent 列表
@@ -71,53 +67,51 @@ class ColdStartBootstrap:
     async def bootstrap(
         self,
         project_id: UUID,
-        snapshot_id: UUID,
         user_message: str,
+        run_id: UUID | None = None,
     ) -> ColdStartResult:
         """
         执行冷启动。
 
         流程：
-        1. 从空 nodes/edges 开始
+        1. 从空的 upstream_outputs 开始
         2. 按顺序执行 intent -> contraction -> planner -> schema
         3. 每步：
-           a. 构建 AgentInput（当前 nodes/edges + user_message）
+           a. 构建 AgentInput（累积的 upstream_outputs + user_message）
            b. 调用 AgentRunner.run(agent_id, agent_input)
-           c. 拿到 AgentRunResult.operations
-           d. 调用 apply_operations(nodes, edges, operations) 更新 IR
-        4. 返回最终 nodes/edges + 统计信息
+           c. 将高层输出并入 upstream_outputs
+        4. 返回全部输出 + 统计信息
 
         - project_id: 项目唯一标识
-        - snapshot_id: 当前快照唯一标识
         - user_message: 用户输入的原始需求描述
-        - 返回: ColdStartResult，包含最终 IR 和执行统计
+        - run_id: 本次运行唯一标识（可选）
+        - 返回: ColdStartResult，包含各 Agent 输出和执行统计
         """
         # 延迟导入避免循环依赖
+        from agents.configs.registry import AgentRegistry
         from agents.schemas.base import AgentInput
 
-        # 初始化空 IR
-        current_nodes: list[IRNodeData] = []
-        current_edges: list[IREdgeData] = []
-
-        total_operations = 0
+        upstream_outputs: dict[str, Any] = {}
+        all_files: list[dict] = []
         agents_executed: list[str] = []
         warnings: list[str] = []
 
+        registry = AgentRegistry.get_instance()
+
         for agent_id in self.COLD_START_AGENTS:
             logger.info(
-                "冷启动执行 Agent: %s (已有 %d 节点, %d 边)",
+                "冷启动执行 Agent: %s (已有 %d 个上游输出)",
                 agent_id,
-                len(current_nodes),
-                len(current_edges),
+                len(upstream_outputs),
             )
 
             try:
                 # 构建 Agent 输入
                 agent_input = AgentInput(
                     project_id=project_id,
-                    snapshot_id=snapshot_id,
-                    ir_nodes=current_nodes,
-                    ir_edges=current_edges,
+                    run_id=run_id,
+                    workspace_files=[],
+                    upstream_outputs=dict(upstream_outputs),
                     conversation_context=[],
                     task_description=user_message,
                     extra={},
@@ -130,41 +124,23 @@ class ColdStartBootstrap:
                 if result.warnings:
                     warnings.extend(result.warnings)
 
-                # 如果没有操作，跳过 apply
-                if not result.operations:
-                    logger.info(
-                        "Agent %s 未产生任何操作，跳过 apply",
-                        agent_id,
-                    )
-                    agents_executed.append(agent_id)
-                    continue
+                # 高层输出并入 upstream_outputs，供后续 Agent 参考
+                config = registry.get(agent_id)
+                high_level = getattr(result.output, config.high_level_key)
+                upstream_outputs[agent_id] = high_level.model_dump(mode="json")
 
-                # 应用操作到当前 IR
-                new_nodes, new_edges = apply_operations(
-                    current_nodes,
-                    current_edges,
-                    result.operations,
-                )
-                current_nodes = new_nodes
-                current_edges = new_edges
-                total_operations += len(result.operations)
+                # 累积文件产物（决策型 Agent 通常为空）
+                if result.files:
+                    all_files.extend(result.files)
+
                 agents_executed.append(agent_id)
 
                 logger.info(
-                    "Agent %s 完成: 应用 %d 个操作, 当前 %d 节点 %d 边",
+                    "Agent %s 完成: %d 个文件, 当前 %d 个上游输出",
                     agent_id,
-                    len(result.operations),
-                    len(current_nodes),
-                    len(current_edges),
+                    len(result.files),
+                    len(upstream_outputs),
                 )
-
-            except ApplyError as exc:
-                # apply_operations 校验失败
-                warning_msg = (
-                    f"{agent_id} 操作应用失败: {exc}"
-                )
-                logger.warning(warning_msg)
-                warnings.append(warning_msg)
 
             except Exception as exc:
                 # Agent 执行本身失败（LLM 调用、解析等）
@@ -173,18 +149,15 @@ class ColdStartBootstrap:
                 warnings.append(warning_msg)
 
         logger.info(
-            "冷启动完成: %d 个 Agent 成功, %d 个操作, %d 节点 %d 边, %d 个警告",
+            "冷启动完成: %d 个 Agent 成功, %d 个文件, %d 个警告",
             len(agents_executed),
-            total_operations,
-            len(current_nodes),
-            len(current_edges),
+            len(all_files),
             len(warnings),
         )
 
         return ColdStartResult(
-            ir_nodes=current_nodes,
-            ir_edges=current_edges,
-            operations_applied=total_operations,
+            outputs=upstream_outputs,
+            files=all_files,
             agents_executed=agents_executed,
             warnings=warnings,
         )

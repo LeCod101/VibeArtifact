@@ -20,7 +20,6 @@ from agents.configs.definitions import register_all_agents
 from agents.executors.runner import AgentRunner
 from agents.schemas.base import AgentInput
 from agents.schemas.contraction import ContractionOutput
-from ir_core.schema.operation_types import OperationType
 from runtime_tools.llm.config import LLMConfig
 from runtime_tools.llm.mock_provider import MockLLMProvider
 
@@ -78,6 +77,17 @@ def _make_contraction_output_json() -> str:
     )
 
 
+def _make_agent_input() -> AgentInput:
+    """构造 contraction agent 的标准输入。"""
+    return AgentInput(
+        project_id=uuid4(),
+        run_id=uuid4(),
+        workspace_files=[],
+        upstream_outputs={},
+        task_description="收缩功能范围到 MVP",
+    )
+
+
 # ============================================================
 # Contraction Agent 端到端测试
 # ============================================================
@@ -98,16 +108,7 @@ class TestContractionE2E:
             llm_config=LLMConfig(),
         )
 
-        # 构造 contraction agent 的输入
-        agent_input = AgentInput(
-            project_id=uuid4(),
-            snapshot_id=uuid4(),
-            ir_nodes=[],
-            ir_edges=[],
-            task_description="收缩功能范围到 MVP",
-        )
-
-        result = await runner.run("contraction", agent_input)
+        result = await runner.run("contraction", _make_agent_input())
 
         # 验证 agent_id
         assert result.agent_id == "contraction"
@@ -125,43 +126,8 @@ class TestContractionE2E:
         assert len(output.decision.risks) == 1
         assert output.decision.rationale != ""
 
-    @pytest.mark.asyncio
-    async def test_contraction_operations_generated(self):
-        """验证 ContractionTranslator 生成了 IR 操作。"""
-        register_all_agents()
-        mock_provider = MockLLMProvider()
-        mock_provider.set_response(_make_contraction_output_json())
-
-        runner = AgentRunner(
-            llm_provider=mock_provider,
-            llm_config=LLMConfig(),
-        )
-
-        agent_input = AgentInput(
-            project_id=uuid4(),
-            snapshot_id=uuid4(),
-            ir_nodes=[],
-            ir_edges=[],
-            task_description="收缩功能范围",
-        )
-
-        result = await runner.run("contraction", agent_input)
-
-        # 应有 create_node 操作（scope + decision + risk）
-        create_ops = [
-            op for op in result.operations
-            if op["operation_type"] == OperationType.CREATE_NODE
-        ]
-        # 2 scope + 3 decision + 1 risk = 6
-        assert len(create_ops) == 6
-
-        # 应有 create_edge 操作（scope→decision + risk→scope）
-        edge_ops = [
-            op for op in result.operations
-            if op["operation_type"] == OperationType.CREATE_EDGE
-        ]
-        # 3 个 decision 各与第一个 scope 建边 + 1 个 risk 与第一个 scope 建边 = 4
-        assert len(edge_ops) == 4
+        # contraction 是决策型 Agent，不产出工作区文件
+        assert result.files == []
 
     @pytest.mark.asyncio
     async def test_contraction_capacity_reduction(self):
@@ -175,15 +141,7 @@ class TestContractionE2E:
             llm_config=LLMConfig(),
         )
 
-        agent_input = AgentInput(
-            project_id=uuid4(),
-            snapshot_id=uuid4(),
-            ir_nodes=[],
-            ir_edges=[],
-            task_description="收缩功能范围",
-        )
-
-        result = await runner.run("contraction", agent_input)
+        result = await runner.run("contraction", _make_agent_input())
         output: ContractionOutput = result.output
 
         # 计算收缩后的容量
@@ -196,8 +154,8 @@ class TestContractionE2E:
         assert report.tier == CapacityTier.SMALL
 
     @pytest.mark.asyncio
-    async def test_contraction_warnings_include_deferred(self):
-        """warnings 包含延后功能信息。"""
+    async def test_contraction_warnings_from_llm(self):
+        """warnings 直接反映 LLM 输出的原始警告。"""
         register_all_agents()
         mock_provider = MockLLMProvider()
         mock_provider.set_response(_make_contraction_output_json())
@@ -207,16 +165,6 @@ class TestContractionE2E:
             llm_config=LLMConfig(),
         )
 
-        agent_input = AgentInput(
-            project_id=uuid4(),
-            snapshot_id=uuid4(),
-            ir_nodes=[],
-            ir_edges=[],
-            task_description="收缩功能范围",
-        )
+        result = await runner.run("contraction", _make_agent_input())
 
-        result = await runner.run("contraction", agent_input)
-
-        # warnings 中应包含延后功能相关信息
-        deferred_warnings = [w for w in result.warnings if "延后" in w]
-        assert len(deferred_warnings) > 0
+        assert "已裁剪 3 个功能" in result.warnings

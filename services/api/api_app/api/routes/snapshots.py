@@ -1,23 +1,26 @@
-"""快照路由模块 - 实现快照的列表查询和详情查询端点。"""
+"""快照路由模块（已废弃）+ 工作区文件查询端点。
+
+IR 快照体系已被工作区文件（workspace_files）取代：
+- GET /projects/{id}/snapshots 保留为废弃 stub（恒返回空列表），
+  待前端移除快照统计后删除。
+- GET /projects/{id}/runs/{run_id}/files 提供工作区文件清单查询。
+"""
 
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from platform_data.models.ir import IREdge, IRNode, IRSnapshot, SnapshotStatus
+from platform_data.models.execution import JobRun
 from platform_data.models.user import User
-from sqlalchemy import func, select
+from platform_data.repositories.workspace_repo import WorkspaceRepository
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api_app.api.deps.auth import get_current_user
 from api_app.api.deps.db import get_db
-from api_app.api.schemas.snapshots import (
-    SnapshotDetailResponse,
-    SnapshotSummaryResponse,
-)
 from api_app.application.services.project_service import ProjectService
 
 router = APIRouter(
-    prefix="/projects/{project_id}/snapshots",
+    prefix="/projects/{project_id}",
     tags=["snapshots"],
 )
 
@@ -43,15 +46,16 @@ async def _verify_project_owner(
         )
 
 
-@router.get("", response_model=list[SnapshotSummaryResponse])
+@router.get("/snapshots", response_model=list[dict], deprecated=True)
 async def list_snapshots(
     project_id: UUID,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-) -> list[SnapshotSummaryResponse]:
-    """列出项目的所有快照，按创建时间倒序排列。
+) -> list[dict]:
+    """已废弃：IR 快照体系已移除，恒返回空列表。
 
-    返回每个快照的节点数和边数统计。
+    保留此端点仅为兼容旧版前端的快照统计展示，
+    前端改造后将删除。
 
     参数：
         project_id: 项目 UUID
@@ -59,128 +63,61 @@ async def list_snapshots(
         db: 异步数据库会话
 
     返回：
-        快照摘要列表
+        空列表
     """
     await _verify_project_owner(project_id, current_user, db)
-
-    # 查询该项目的所有快照
-    result = await db.execute(
-        select(IRSnapshot)
-        .where(IRSnapshot.project_id == project_id)
-        .order_by(IRSnapshot.created_at.desc())
-    )
-    snapshots = result.scalars().all()
-
-    # 找到当前活跃快照（版本最高的 active 快照）
-    active_snapshot = None
-    for s in snapshots:
-        if s.status == SnapshotStatus.active:
-            active_snapshot = s
-            break
-
-    responses = []
-    for snap in snapshots:
-        # 统计节点数
-        node_count_result = await db.execute(
-            select(func.count())
-            .select_from(IRNode)
-            .where(IRNode.snapshot_id == snap.id)
-        )
-        node_count = node_count_result.scalar_one()
-
-        # 统计边数
-        edge_count_result = await db.execute(
-            select(func.count())
-            .select_from(IREdge)
-            .where(IREdge.snapshot_id == snap.id)
-        )
-        edge_count = edge_count_result.scalar_one()
-
-        responses.append(
-            SnapshotSummaryResponse(
-                id=snap.id,
-                created_at=snap.created_at,
-                parent_id=snap.parent_snapshot_id,
-                node_count=node_count,
-                edge_count=edge_count,
-                is_current=(
-                    active_snapshot is not None
-                    and snap.id == active_snapshot.id
-                ),
-            )
-        )
-
-    return responses
+    return []
 
 
-@router.get("/{snapshot_id}", response_model=SnapshotDetailResponse)
-async def get_snapshot(
+@router.get("/runs/{run_id}/files")
+async def list_run_files(
     project_id: UUID,
-    snapshot_id: UUID,
+    run_id: UUID,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-) -> SnapshotDetailResponse:
-    """查询快照详情，包含节点和边的摘要信息。
+) -> list[dict]:
+    """查询指定运行的工作区文件清单。
+
+    返回文件路径、类别、版本和产出 Agent，不含文件内容
+    （完整内容通过 ZIP 下载端点获取）。
 
     参数：
         project_id: 项目 UUID
-        snapshot_id: 快照 UUID
+        run_id: 运行 UUID
         current_user: 当前认证用户
         db: 异步数据库会话
 
     返回：
-        快照详情（含节点和边列表）
+        工作区文件摘要列表
 
     异常：
-        404: 快照不存在或不属于该项目
+        404: 运行不存在或不属于该项目
     """
     await _verify_project_owner(project_id, current_user, db)
 
-    # 查询快照
-    result = await db.execute(
-        select(IRSnapshot).where(
-            IRSnapshot.id == snapshot_id,
-            IRSnapshot.project_id == project_id,
+    # 验证 run 归属项目
+    run_result = await db.execute(
+        select(JobRun).where(
+            JobRun.id == run_id,
+            JobRun.project_id == project_id,
         )
     )
-    snapshot = result.scalar_one_or_none()
-    if snapshot is None:
+    if run_result.scalar_one_or_none() is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="快照不存在",
+            detail="运行不存在",
         )
 
-    # 查询节点
-    nodes_result = await db.execute(
-        select(IRNode).where(IRNode.snapshot_id == snapshot_id)
-    )
-    nodes = [
-        {
-            "id": str(n.id),
-            "node_type": n.node_type,
-            "label": n.label,
-        }
-        for n in nodes_result.scalars().all()
-    ]
+    repo = WorkspaceRepository(db)
+    files = await repo.read_all(run_id)
 
-    # 查询边
-    edges_result = await db.execute(
-        select(IREdge).where(IREdge.snapshot_id == snapshot_id)
-    )
-    edges = [
+    return [
         {
-            "id": str(e.id),
-            "edge_type": e.edge_type,
-            "source_node_id": str(e.source_node_id),
-            "target_node_id": str(e.target_node_id),
+            "file_path": f.file_path,
+            "file_kind": f.file_kind,
+            "version": f.version,
+            "written_by_agent": f.written_by_agent,
+            "updated_at": f.updated_at.isoformat(),
         }
-        for e in edges_result.scalars().all()
+        for f in files
     ]
-
-    return SnapshotDetailResponse(
-        id=snapshot.id,
-        created_at=snapshot.created_at,
-        parent_id=snapshot.parent_snapshot_id,
-        nodes=nodes,
-        edges=edges,
-    )

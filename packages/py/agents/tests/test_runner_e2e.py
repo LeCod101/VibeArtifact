@@ -58,10 +58,10 @@ class TestRunnerIntentE2E:
         assert isinstance(result.output, IntentOutput)
 
     @pytest.mark.asyncio
-    async def test_operations_not_empty(
+    async def test_files_empty_for_decision_agent(
         self, sample_agent_input, mock_intent_output_json
     ):
-        """AgentRunResult.operations 不为空（包含 scope 节点创建操作）。"""
+        """intent 是决策型 Agent，AgentRunResult.files 为空。"""
         register_all_agents()
         mock_provider = MockLLMProvider()
         mock_provider.set_response(mock_intent_output_json)
@@ -72,7 +72,7 @@ class TestRunnerIntentE2E:
         )
 
         result = await runner.run("intent", sample_agent_input)
-        assert len(result.operations) > 0
+        assert result.files == []
 
     @pytest.mark.asyncio
     async def test_meta_contains_model_info(
@@ -139,10 +139,10 @@ class TestRunnerIntentE2E:
         assert "user" in roles
 
     @pytest.mark.asyncio
-    async def test_warnings_include_deferred_items(
+    async def test_warnings_reflect_llm_output(
         self, sample_agent_input, mock_intent_output_json
     ):
-        """mock_intent_output 包含 deferred_items，warnings 中应有延后提示。"""
+        """result.warnings 直接反映 mock LLM 输出的 warnings 字段（此处为空）。"""
         register_all_agents()
         mock_provider = MockLLMProvider()
         mock_provider.set_response(mock_intent_output_json)
@@ -154,7 +154,5 @@ class TestRunnerIntentE2E:
 
         result = await runner.run("intent", sample_agent_input)
 
-        # mock 数据中有 deferred_items: ["团队协作", "日历集成"]
-        # translator 应该将其作为 warning
-        deferred_warnings = [w for w in result.warnings if "延后" in w]
-        assert len(deferred_warnings) > 0
+        # mock_intent_output_json 的 warnings 字段为空列表
+        assert result.warnings == []

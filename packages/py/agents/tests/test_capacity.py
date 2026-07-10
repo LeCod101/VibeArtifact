@@ -23,8 +23,7 @@ from agents.capacity.tiers import (
     get_tier,
     is_over_budget,
 )
-from agents.schemas.high_level import ScopeDraft, ScopeItem
-from ir_core.schema.node_types import Priority
+from agents.schemas.high_level import Priority, ScopeDraft, ScopeItem
 
 # ============================================================
 # 测试辅助函数

@@ -1,9 +1,9 @@
 """
 Agent 高层结构体模块。
 
-定义 LLM 输出的高层业务结构，这些结构不是 IROperation，
-而是由 Translator 翻译为 IROperation。每种结构体对应一个
-Agent 的输出格式，描述其业务语义。
+定义 LLM 输出的高层业务结构，每种结构体对应一个 Agent 的输出格式，
+描述其业务语义。代码/文档/图表类结构体由 file_extractor 直接提取为
+工作区文件写入 workspace_files。
 
 包含以下高层结构体：
 - ScopeItem / ScopeDraft：功能范围草案（intent/contraction agent）
@@ -16,10 +16,22 @@ Agent 的输出格式，描述其业务语义。
 - FixItem / FixPlan：旧版修复计划（已废弃，保留兼容）
 """
 
+from enum import StrEnum
 from typing import Literal
 
-from ir_core.schema.node_types import Priority
 from pydantic import BaseModel
+
+# ============================================================
+# 优先级枚举
+# ============================================================
+
+class Priority(StrEnum):
+    """功能范围的优先级等级。"""
+
+    HIGH = "high"
+    MEDIUM = "medium"
+    LOW = "low"
+
 
 # ============================================================
 # 功能范围相关（intent / contraction agent）
@@ -32,7 +44,7 @@ class ScopeItem(BaseModel):
     表示 MVP 中一个被保留的功能点。
     - name: 功能名称
     - description: 功能描述
-    - priority: 优先级（来自 ir_core 的 Priority 枚举）
+    - priority: 优先级
     - tags: 功能标签列表
     """
 

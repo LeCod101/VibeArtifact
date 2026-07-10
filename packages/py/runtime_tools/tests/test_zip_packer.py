@@ -236,45 +236,33 @@ class TestArtifactCollector:
     """产物收集器测试。"""
 
     def test_collector(self):
-        """ArtifactCollector 正确收集 code/doc/diagram 节点。"""
-        nodes = [
+        """ArtifactCollector 正确收集 code/doc/diagram 文件。"""
+        files = [
             {
-                "node_type": "code",
-                "props": {
-                    "path": "backend/main.py",
-                    "content": "app = FastAPI()",
-                    "language": "python",
-                },
+                "file_path": "backend/main.py",
+                "content": "app = FastAPI()",
+                "file_kind": "code",
             },
             {
-                "node_type": "doc",
-                "props": {
-                    "path": "README.md",
-                    "content": "# TodoApp",
-                    "format": "markdown",
-                },
+                "file_path": "README.md",
+                "content": "# TodoApp",
+                "file_kind": "doc",
             },
             {
-                "node_type": "diagram",
-                "props": {
-                    "name": "ER 图",
-                    "diagram_type": "er",
-                    "content": "erDiagram\n    User ||--o{ Todo : has",
-                    "description": "数据库关系图",
-                },
+                "file_path": "ER_图",
+                "content": "# ER 图\n\n```mermaid\nerDiagram\n```\n",
+                "file_kind": "diagram",
             },
-            # 非收集类型，应被忽略
+            # 非收集类别，应被忽略
             {
-                "node_type": "scope",
-                "props": {
-                    "name": "功能1",
-                    "description": "描述",
-                },
+                "file_path": "misc.bin",
+                "content": "xxx",
+                "file_kind": "other",
             },
         ]
 
         collector = ArtifactCollector()
-        entries = collector.collect(nodes)
+        entries = collector.collect(files)
 
         # 应该收集 3 个文件（code + doc + diagram）
         assert len(entries) == 3
@@ -288,62 +276,34 @@ class TestArtifactCollector:
         assert len(diagram_paths) == 1
 
     def test_collector_empty_content_skipped(self):
-        """content 为空的节点被跳过。"""
-        nodes = [
+        """content 为空的文件被跳过。"""
+        files = [
             {
-                "node_type": "code",
-                "props": {
-                    "path": "empty.py",
-                    "content": "",
-                    "language": "python",
-                },
+                "file_path": "empty.py",
+                "content": "",
+                "file_kind": "code",
             },
         ]
 
         collector = ArtifactCollector()
-        entries = collector.collect(nodes)
+        entries = collector.collect(files)
 
         assert len(entries) == 0
 
-    def test_collector_empty_nodes(self):
-        """空节点列表返回空集合。"""
+    def test_collector_empty_files(self):
+        """空文件列表返回空集合。"""
         collector = ArtifactCollector()
         entries = collector.collect([])
         assert len(entries) == 0
 
-    def test_collector_no_props_skipped(self):
-        """没有 props 的节点被跳过。"""
-        nodes = [
-            {"node_type": "code"},
-            {"node_type": "doc", "props": {}},
+    def test_collector_missing_fields_skipped(self):
+        """缺少路径或内容的文件被跳过。"""
+        files = [
+            {"file_kind": "code"},
+            {"file_kind": "doc", "file_path": "a.md", "content": ""},
         ]
 
         collector = ArtifactCollector()
-        entries = collector.collect(nodes)
+        entries = collector.collect(files)
 
         assert len(entries) == 0
-
-    def test_collector_diagram_content_format(self):
-        """diagram 节点导出的内容包含 Mermaid 代码块。"""
-        nodes = [
-            {
-                "node_type": "diagram",
-                "props": {
-                    "name": "测试图",
-                    "diagram_type": "flowchart",
-                    "content": "graph LR\n    A --> B",
-                    "description": "流程图",
-                },
-            },
-        ]
-
-        collector = ArtifactCollector()
-        entries = collector.collect(nodes)
-
-        assert len(entries) == 1
-        content = entries[0].content
-        # 验证 Markdown 格式
-        assert "# 测试图" in content
-        assert "```mermaid" in content
-        assert "graph LR" in content
-        assert "```" in content

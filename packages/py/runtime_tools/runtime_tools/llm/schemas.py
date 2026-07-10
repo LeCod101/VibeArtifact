@@ -34,7 +34,7 @@ class LLMRequest(BaseModel):
 
     Attributes:
         messages: 对话消息列表
-        model: LiteLLM 模型标识，如 "anthropic/claude-sonnet-4-20250514"
+        model: 模型标识，格式为 "provider/model"，如 "deepseek/deepseek-chat"
         temperature: 采样温度，控制输出随机性
         max_tokens: 最大生成 token 数
         response_format: JSON schema，structured output 时使用

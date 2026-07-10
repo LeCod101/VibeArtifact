@@ -5,12 +5,11 @@ description = "Agent configs, prompts, translators, executors"
 requires-python = ">=3.12"
 dependencies = [
     "pydantic>=2.0",
-    "ir-core",
     "runtime-tools",
+    "langgraph>=0.2",
 ]
 
 [tool.uv.sources]
-ir-core = { workspace = true }
 runtime-tools = { workspace = true }
 
 [project.optional-dependencies]

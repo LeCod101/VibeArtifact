@@ -4,10 +4,11 @@ Agent 选择器模块。
 AgentSelector 根据 ImpactReport 决定需要执行哪些 Agent，
 并按 DAG 依赖关系排列为分层执行计划（同层可并行）。
 
-依赖关系 DAG（Phase 1 的 10 个 Agent）：
+依赖关系 DAG（reviewer 不在此列，由 conversation_graph 在
+配对 author 执行步内多轮调用）：
     intent → contraction → planner → schema
         → backend / frontend / doc / diagram (同层并行)
-            → qa → export
+            → export
 """
 
 from agents.analysis.models import ImpactReport
@@ -26,8 +27,7 @@ DEPENDENCY_MAP: dict[str, list[str]] = {
     "frontend": ["schema"],
     "doc": ["schema"],
     "diagram": ["schema"],
-    "qa": ["backend", "frontend", "doc", "diagram"],
-    "export": ["qa"],
+    "export": ["backend", "frontend", "doc", "diagram"],
 }
 
 # Agent → 执行层级（数字越小越先执行，同层级可并行）
@@ -40,12 +40,8 @@ LAYER_ORDER: dict[str, int] = {
     "frontend": 4,
     "doc": 4,
     "diagram": 4,
-    "qa": 5,
-    "export": 6,
+    "export": 5,
 }
-
-# 代码生成类 Agent（用于判断是否需要追加 QA）
-_CODE_AGENTS: frozenset[str] = frozenset({"backend", "frontend"})
 
 
 class AgentSelector:
@@ -55,20 +51,17 @@ class AgentSelector:
     根据 ImpactReport 生成分层执行计划：
     - 冷启动时返回完整初始化链
     - 增量修改时按 DAG 层级排序，同层可并行
-    - 可选追加 QA 层
+
+    代码类 Agent 的质量把关由其配对 reviewer 在执行步内完成
+    （conversation_graph 多轮循环），不再追加独立 QA 层。
     """
 
-    def select(
-        self,
-        report: ImpactReport,
-        run_qa: bool = True,
-    ) -> list[list[str]]:
+    def select(self, report: ImpactReport) -> list[list[str]]:
         """
         根据影响报告生成分层执行计划。
 
         参数：
         - report: ImpactAnalyzer 产出的影响分析报告
-        - run_qa: 是否在有代码生成 Agent 时追加 QA 层（默认 True）
 
         返回：
         - 分层执行计划，每层是一个 Agent 列表，同层内可并行执行
@@ -81,14 +74,8 @@ class AgentSelector:
         # ── 增量修改：收集需要执行的 Agent ──
         agents_to_run: set[str] = set(report.affected_agents)
 
-        # 如果需要 QA 且存在代码生成 Agent，追加 qa
-        if run_qa and agents_to_run & _CODE_AGENTS:
-            agents_to_run.add("qa")
-
         # ── 按层级分组 ──
-        layers = self._group_by_layer(agents_to_run)
-
-        return layers
+        return self._group_by_layer(agents_to_run)
 
     def _group_by_layer(self, agents: set[str]) -> list[list[str]]:
         """

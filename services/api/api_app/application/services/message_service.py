@@ -1,6 +1,6 @@
 """消息服务 - 封装消息的保存和查询业务逻辑。
 
-M1 阶段只做简单的消息存储，M7 阶段扩展支持快照和 LLM 成本字段。
+支持消息存储及 LLM 成本字段记录。
 """
 
 from decimal import Decimal
@@ -71,32 +71,28 @@ class MessageService:
         """
         return await self.message_repo.list_by_branch(branch_id=branch_id, limit=limit)
 
-    async def save_message_with_snapshot(
+    async def save_message_with_cost(
         self,
         conversation_id: UUID,
         branch_id: UUID,
         role: str,
         content: str,
-        snapshot_before_id: UUID | None = None,
-        snapshot_after_id: UUID | None = None,
         model: str | None = None,
         provider: str | None = None,
         prompt_tokens: int | None = None,
         completion_tokens: int | None = None,
         total_cost: float | None = None,
     ) -> Message:
-        """保存消息，附带快照和 LLM 成本信息。
+        """保存消息，附带 LLM 成本信息。
 
-        与 save_message 的区别：支持 snapshot 和 cost 字段，
-        用于 M7 Chat API 中保存用户消息和助手回复。
+        与 save_message 的区别：支持 LLM 成本字段，
+        用于 Chat API 中保存用户消息和助手回复。
 
         参数:
             conversation_id: 所属对话的 UUID
             branch_id: 所属分支的 UUID
             role: 消息角色（"user" / "assistant" / "system"）
             content: 消息文本内容
-            snapshot_before_id: 消息执行前的快照 ID
-            snapshot_after_id: 消息执行后的快照 ID
             model: LLM 模型名称
             provider: LLM 提供商
             prompt_tokens: 输入 token 数
@@ -117,8 +113,6 @@ class MessageService:
             branch_id=branch_id,
             role=message_role,
             content=content,
-            snapshot_before_id=snapshot_before_id,
-            snapshot_after_id=snapshot_after_id,
             model=model,
             provider=provider,
             prompt_tokens=prompt_tokens,

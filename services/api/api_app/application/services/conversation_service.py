@@ -36,7 +36,6 @@ class ConversationService:
         self,
         project_id: UUID,
         title: str | None = None,
-        base_snapshot_id: UUID | None = None,
     ) -> Conversation:
         """创建对话并自动初始化默认分支。
 
@@ -48,7 +47,6 @@ class ConversationService:
         参数:
             project_id: 所属项目的 UUID
             title: 对话标题，可选
-            base_snapshot_id: 分支绑定的基线快照 ID，可选
 
         返回:
             新创建的 Conversation 实例（已关联活跃分支）
@@ -65,7 +63,6 @@ class ConversationService:
         branch = ConversationBranch(
             conversation_id=conversation.id,
             branch_name="main",
-            base_snapshot_id=base_snapshot_id,
         )
         branch = await self.branch_repo.create(branch)
 
@@ -94,10 +91,10 @@ class ConversationService:
         """
         return await self.conversation_repo.list_by_project(project_id=project_id, offset=offset, limit=limit)
 
-    async def get_branch_with_snapshot(
+    async def get_branch(
         self, branch_id: UUID
     ) -> ConversationBranch:
-        """获取分支信息（含 head_snapshot_id）。
+        """获取分支信息。
 
         参数:
             branch_id: 分支 UUID
@@ -109,17 +106,3 @@ class ConversationService:
             如果分支不存在，返回 None（由调用方处理）
         """
         return await self.branch_repo.get_by_id(branch_id)
-
-    async def update_branch_head(
-        self, branch_id: UUID, new_snapshot_id: UUID
-    ) -> None:
-        """更新分支的 head_snapshot_id。
-
-        参数:
-            branch_id: 分支 UUID
-            new_snapshot_id: 新的快照 UUID
-        """
-        branch = await self.branch_repo.get_by_id(branch_id)
-        if branch is not None:
-            branch.head_snapshot_id = new_snapshot_id
-            await self.session.flush()

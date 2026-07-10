@@ -102,14 +102,13 @@ class JobRun(Base):
     """
     job_runs 表的 ORM 映射。
 
-    记录一次完整的 DAG 运行，包含项目 ID、快照 ID、
+    记录一次完整的 DAG 运行，包含项目 ID、
     运行类型、状态和时间信息。
     """
     __tablename__ = "job_runs"
 
     id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid4)
     project_id: Mapped[UUID] = mapped_column(Uuid, nullable=False)
-    snapshot_id: Mapped[UUID | None] = mapped_column(Uuid, nullable=True)
     job_type: Mapped[str] = mapped_column(String(100), nullable=False)
     status: Mapped[str] = mapped_column(
         Enum(
@@ -215,7 +214,6 @@ class RunManager:
     async def create_run(
         self,
         project_id: UUID,
-        snapshot_id: UUID,
         agent_ids: list[str],
         input_payload: dict | None = None,
     ) -> UUID:
@@ -226,7 +224,6 @@ class RunManager:
         并为每个 agent 在 agent_runs 表中创建一条 pending 状态的记录。
 
         - project_id: 项目 ID
-        - snapshot_id: 快照 ID
         - agent_ids: 需要执行的 agent 列表
         - input_payload: 初始输入负载（可选）
         返回新建的 job_run ID。
@@ -237,7 +234,6 @@ class RunManager:
                 job_run = JobRun(
                     id=run_id,
                     project_id=project_id,
-                    snapshot_id=snapshot_id,
                     job_type="delegated",
                     status=RunStatus.PENDING,
                     input_payload=input_payload,

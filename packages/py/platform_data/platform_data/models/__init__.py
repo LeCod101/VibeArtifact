@@ -20,22 +20,18 @@ from platform_data.models.execution import (
     AuditEvent,
     CostLedger,
     JobRun,
-    LeaseLock,
     RunStatus,
-)
-
-# IR
-from platform_data.models.ir import (
-    IREdge,
-    IRNode,
-    IROperation,
-    IRSnapshot,
-    SnapshotStatus,
 )
 from platform_data.models.project import ModelTier, Project, ProjectConfig, ProjectStatus
 
+# Review
+from platform_data.models.review import ReviewTurn
+
 # User & Project
 from platform_data.models.user import User, UserStatus
+
+# Workspace
+from platform_data.models.workspace import WorkspaceFile
 
 __all__ = [
     "Base",
@@ -48,12 +44,6 @@ __all__ = [
     "ProjectConfig",
     "ProjectStatus",
     "ModelTier",
-    # IR
-    "IRSnapshot",
-    "IRNode",
-    "IREdge",
-    "IROperation",
-    "SnapshotStatus",
     # Conversation
     "Conversation",
     "ConversationBranch",
@@ -68,8 +58,11 @@ __all__ = [
     # Execution & Audit
     "JobRun",
     "AgentRun",
-    "LeaseLock",
     "CostLedger",
     "AuditEvent",
     "RunStatus",
+    # Workspace
+    "WorkspaceFile",
+    # Review
+    "ReviewTurn",
 ]

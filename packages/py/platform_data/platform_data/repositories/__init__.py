@@ -3,19 +3,19 @@
 from platform_data.repositories.base import BaseRepository
 from platform_data.repositories.branch_repo import BranchRepository
 from platform_data.repositories.conversation_repo import ConversationRepository
-from platform_data.repositories.lease_repo import LeaseRepository
 from platform_data.repositories.message_repo import MessageRepository
 from platform_data.repositories.project_repo import ProjectRepository
-from platform_data.repositories.snapshot_repo import SnapshotRepository
+from platform_data.repositories.review_turn_repo import ReviewTurnRepository
 from platform_data.repositories.user_repo import UserRepository
+from platform_data.repositories.workspace_repo import WorkspaceRepository
 
 __all__ = [
     "BaseRepository",
     "BranchRepository",
     "ConversationRepository",
-    "LeaseRepository",
     "MessageRepository",
     "ProjectRepository",
-    "SnapshotRepository",
+    "ReviewTurnRepository",
     "UserRepository",
+    "WorkspaceRepository",
 ]

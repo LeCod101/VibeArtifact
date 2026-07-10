@@ -1,9 +1,9 @@
 """
-10 个 Agent 的角色 Prompt 模板。
+Agent 角色 Prompt 模板注册表。
 
 每个 prompt 包含角色定义、输入说明、输出说明和约束。
-intent、contraction、planner、schema(部分)、backend、frontend、doc、diagram、qa、export agent
-已完成精细化 prompt engineering。
+流水线 Agent（intent/contraction/planner/schema/backend/frontend/doc/
+diagram/export）+ 4 个 reviewer（配对评审 backend/frontend/doc/diagram）。
 
 支持通过 agent name（小写字符串）索引获取对应的角色 prompt。
 """
@@ -16,7 +16,12 @@ from agents.prompts.templates.export_role import EXPORT_ROLE_PROMPT
 from agents.prompts.templates.frontend_role import FRONTEND_ROLE_PROMPT
 from agents.prompts.templates.intent_role import INTENT_ROLE_PROMPT
 from agents.prompts.templates.planner_role import PLANNER_ROLE_PROMPT
-from agents.prompts.templates.qa_role import QA_ROLE_PROMPT
+from agents.prompts.templates.review_role import (
+    BACKEND_REVIEWER_ROLE_PROMPT,
+    DIAGRAM_REVIEWER_ROLE_PROMPT,
+    DOC_REVIEWER_ROLE_PROMPT,
+    FRONTEND_REVIEWER_ROLE_PROMPT,
+)
 
 ROLE_PROMPTS: dict[str, str] = {
     # ================================================================
@@ -80,9 +85,12 @@ ROLE_PROMPTS: dict[str, str] = {
     "diagram": DIAGRAM_ROLE_PROMPT,
 
     # ================================================================
-    # QA Agent — 质量检查官（M5 完整 prompt）
+    # Reviewer Agents — 配对评审专家（与 author 多轮循环）
     # ================================================================
-    "qa": QA_ROLE_PROMPT,
+    "backend_reviewer": BACKEND_REVIEWER_ROLE_PROMPT,
+    "frontend_reviewer": FRONTEND_REVIEWER_ROLE_PROMPT,
+    "doc_reviewer": DOC_REVIEWER_ROLE_PROMPT,
+    "diagram_reviewer": DIAGRAM_REVIEWER_ROLE_PROMPT,
 
     # ================================================================
     # Export Agent — 交付清单生成器（M5 完整 prompt）

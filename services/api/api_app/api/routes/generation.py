@@ -109,7 +109,7 @@ def _response_to_scope_draft(resp: ScopeDraftResponse) -> ScopeDraft:
     返回：
         agents 层的 ScopeDraft 对象
     """
-    from ir_core.schema.node_types import Priority
+    from agents.schemas.high_level import Priority
 
     return ScopeDraft(
         product_name=resp.product_name,
@@ -178,7 +178,7 @@ def _mock_analyze(user_idea: str) -> ScopeDraft:
     返回：
         ScopeDraft 功能范围草案
     """
-    from ir_core.schema.node_types import Priority
+    from agents.schemas.high_level import Priority
 
     idea_lower = user_idea.lower()
     scopes: list[ScopeItem] = []
@@ -253,7 +253,7 @@ def _mock_contract(
     返回：
         (收缩后的 ScopeDraft, 收缩决策 ContractionDecision)
     """
-    from ir_core.schema.node_types import Priority
+    from agents.schemas.high_level import Priority
 
     # 按优先级排序：high 排前面优先保留，low 排后面优先被裁剪
     priority_order = {Priority.HIGH: 0, Priority.MEDIUM: 1, Priority.LOW: 2}

@@ -25,7 +25,7 @@ class RoleCategory(StrEnum):
     SCHEMA = "schema"
     BUILD = "build"
     DOCUMENTATION = "documentation"
-    QA = "qa"
+    REVIEW = "review"
     DELIVERY = "delivery"
 
 

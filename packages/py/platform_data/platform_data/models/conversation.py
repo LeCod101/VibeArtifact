@@ -1,7 +1,7 @@
 """会话模型 - 定义对话、分支、消息三张表。
 
-会话绑定快照分支（Snapshot-Aware Tree Conversation），
-每条消息记录执行前后的快照 ID，支持树状回溯。
+会话支持树状分支（Tree Conversation），
+每条消息记录 LLM 调用成本，分支支持树状回溯。
 """
 
 import enum
@@ -62,7 +62,7 @@ class Conversation(UUIDPrimaryKeyMixin, TimestampMixin, Base):
 
 
 class ConversationBranch(UUIDPrimaryKeyMixin, Base):
-    """会话分支表，支持树状分叉，每个分支绑定 base/head 快照。"""
+    """会话分支表，支持树状分叉。"""
 
     __tablename__ = "conversation_branches"
 
@@ -72,12 +72,6 @@ class ConversationBranch(UUIDPrimaryKeyMixin, Base):
     parent_branch_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("conversation_branches.id"),
     )
-    base_snapshot_id: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("ir_snapshots.id"),
-    )
-    head_snapshot_id: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("ir_snapshots.id"),
-    )
     branch_name: Mapped[str | None] = mapped_column(String(200))
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(),
@@ -85,7 +79,7 @@ class ConversationBranch(UUIDPrimaryKeyMixin, Base):
 
 
 class Message(UUIDPrimaryKeyMixin, Base):
-    """消息表，记录对话内容及关联的快照变化和 LLM 调用成本。"""
+    """消息表，记录对话内容及关联的 LLM 调用成本。"""
 
     __tablename__ = "messages"
 
@@ -94,13 +88,6 @@ class Message(UUIDPrimaryKeyMixin, Base):
     )
     branch_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("conversation_branches.id"), nullable=False, index=True,
-    )
-    # 消息执行前后的快照，用于回溯和 diff
-    snapshot_before_id: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("ir_snapshots.id"),
-    )
-    snapshot_after_id: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("ir_snapshots.id"),
     )
     role: Mapped[MessageRole] = mapped_column(
         Enum(MessageRole, name="message_role", native_enum=True),

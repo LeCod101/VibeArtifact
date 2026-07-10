@@ -18,7 +18,6 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import FileResponse, StreamingResponse
 from platform_data.models.execution import AgentRun, JobRun, RunStatus
 from platform_data.models.user import User
-from platform_data.repositories.snapshot_repo import SnapshotRepository
 from runtime_tools.exporters.storage import get_zip_path
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -206,13 +205,12 @@ async def create_delegated_run(
     前置校验：
     1. 项目存在且属于当前用户
     2. 同项目无正在进行的 run（status=running 或 pending）
-    3. 获取快照（传入 snapshot_id 或使用最新快照）
 
     校验通过后创建 job_run 并触发 Celery DAG 编排任务。
 
     参数：
         project_id: 项目 UUID
-        body: 请求体（可选 snapshot_id）
+        body: 请求体（snapshot_id 字段已废弃，仅为前端兼容保留）
         current_user: 当前认证用户
         db: 异步数据库会话
 
@@ -221,7 +219,6 @@ async def create_delegated_run(
 
     异常：
         409: 同项目已有进行中的运行
-        422: 快照不存在
     """
     # 步骤 1：验证项目归属
     await _get_user_project(project_id, current_user, db)
@@ -242,48 +239,26 @@ async def create_delegated_run(
             detail="该项目已有进行中的运行，请等待完成后再试",
         )
 
-    # 步骤 3：获取快照
-    snapshot_repo = SnapshotRepository(db)
-    if body.snapshot_id is not None:
-        snapshot = await snapshot_repo.get_by_id(UUID(body.snapshot_id))
-        if snapshot is None:
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail="指定的快照不存在",
-            )
-        snapshot_id = snapshot.id
-    else:
-        # 使用最新活跃快照
-        snapshot = await snapshot_repo.get_active(project_id)
-        if snapshot is None:
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail="项目没有可用的快照",
-            )
-        snapshot_id = snapshot.id
-
-    # 步骤 4：创建 job_run 记录
+    # 步骤 3：创建 job_run 记录
     import uuid as uuid_mod
 
     run_id = uuid_mod.uuid4()
     job_run = JobRun(
         id=run_id,
         project_id=project_id,
-        snapshot_id=snapshot_id,
         job_type="delegated",
         status=RunStatus.pending,
     )
     db.add(job_run)
     await db.commit()
 
-    # 步骤 5：触发 Celery 编排任务
+    # 步骤 4：触发 Celery 编排任务
     try:
         from worker_app.tasks.orchestrate import run_delegated_dag
 
         run_delegated_dag.delay(
             run_id=str(run_id),
             project_id=str(project_id),
-            snapshot_id=str(snapshot_id),
             scope_draft_json="{}",
         )
     except Exception as exc:
@@ -372,7 +347,56 @@ async def get_delegated_run(
 
 
 # ============================================================
-# 8.2 SSE 事件流端点
+# 8.2 评审轮次历史端点
+# ============================================================
+
+
+@router.get("/{run_id}/turns")
+async def list_review_turns(
+    project_id: UUID,
+    run_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> list[dict]:
+    """查询运行的 author↔reviewer 评审轮次历史。
+
+    返回按 agent、轮次排序的轮次记录列表，
+    供前端展示多轮评审过程。
+
+    参数：
+        project_id: 项目 UUID
+        run_id: 运行 UUID
+        current_user: 当前认证用户
+        db: 异步数据库会话
+
+    返回：
+        轮次记录字典列表
+    """
+    from platform_data.repositories.review_turn_repo import (
+        ReviewTurnRepository,
+    )
+
+    await _get_user_project(project_id, current_user, db)
+    await _get_job_run(run_id, project_id, db)
+
+    repo = ReviewTurnRepository(db)
+    turns = await repo.list_by_run(run_id)
+
+    return [
+        {
+            "agent_id": t.agent_id,
+            "role": t.role,
+            "round_number": t.round_number,
+            "verdict": t.verdict,
+            "content_summary": t.content_summary,
+            "created_at": t.created_at.isoformat() if t.created_at else None,
+        }
+        for t in turns
+    ]
+
+
+# ============================================================
+# 8.3 SSE 事件流端点
 # ============================================================
 
 

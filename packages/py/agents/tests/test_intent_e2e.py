@@ -17,7 +17,6 @@ from agents.capacity.tiers import CapacityTier
 from agents.configs.definitions import register_all_agents
 from agents.executors.runner import AgentRunner
 from agents.schemas.intent import IntentOutput
-from ir_core.schema.operation_types import OperationType
 from runtime_tools.llm.config import LLMConfig
 from runtime_tools.llm.mock_provider import MockLLMProvider
 
@@ -71,7 +70,7 @@ class TestIntentE2E:
 
     @pytest.mark.asyncio
     async def test_intent_mock_e2e(self, sample_agent_input):
-        """mock LLM 返回合法 JSON → 验证 AgentRunResult 包含正确的 operations。"""
+        """mock LLM 返回合法 JSON → 验证 AgentRunResult 包含正确的输出。"""
         register_all_agents()
         mock_provider = MockLLMProvider()
         mock_provider.set_response(_make_intent_output_json(3))
@@ -92,17 +91,8 @@ class TestIntentE2E:
         # 验证 scope_draft 包含 3 个 scope
         assert len(result.output.scope_draft.scopes) == 3
 
-        # 验证 operations 包含 create_node 操作
-        create_ops = [
-            op for op in result.operations
-            if op["operation_type"] == OperationType.CREATE_NODE
-        ]
-        # 3 个 scope + 1 个 risk = 4 个 create_node
-        assert len(create_ops) >= 3
-
-        # 验证 warnings 包含延后信息
-        deferred_warnings = [w for w in result.warnings if "延后" in w]
-        assert len(deferred_warnings) > 0
+        # intent 是决策型 Agent，不产出工作区文件
+        assert result.files == []
 
     @pytest.mark.asyncio
     async def test_intent_capacity_integration(self, sample_agent_input):

@@ -37,7 +37,6 @@ def run_delegated_dag(
     self,
     run_id: str | None = None,
     project_id: str = "",
-    snapshot_id: str = "",
     scope_draft_json: str = "{}",
 ) -> dict:
     """
@@ -47,7 +46,6 @@ def run_delegated_dag(
     - self: Celery task 实例（bind=True）
     - run_id: 预创建的 run ID（可选，为 None 时自动创建）
     - project_id: 项目 ID
-    - snapshot_id: 快照 ID
     - scope_draft_json: 初始 scope_draft JSON
     返回执行结果字典。
     """
@@ -57,7 +55,6 @@ def run_delegated_dag(
             _run_delegated_dag_async(
                 run_id=run_id,
                 project_id=project_id,
-                snapshot_id=snapshot_id,
                 scope_draft_json=scope_draft_json,
             )
         )
@@ -68,7 +65,6 @@ def run_delegated_dag(
 async def _run_delegated_dag_async(
     run_id: str | None,
     project_id: str,
-    snapshot_id: str,
     scope_draft_json: str,
 ) -> dict:
     """
@@ -85,7 +81,6 @@ async def _run_delegated_dag_async(
 
     - run_id: 预创建的 run ID
     - project_id: 项目 ID
-    - snapshot_id: 快照 ID
     - scope_draft_json: 初始 scope_draft JSON
     返回最终执行结果字典。
     """
@@ -120,13 +115,11 @@ async def _run_delegated_dag_async(
 
         # 步骤 3：创建 run 记录
         project_uuid = UUID(project_id)
-        snapshot_uuid = UUID(snapshot_id)
 
         if run_id is None:
             scope_draft = _parse_json(scope_draft_json)
             created_run_id = await manager.create_run(
                 project_id=project_uuid,
-                snapshot_id=snapshot_uuid,
                 agent_ids=all_agent_ids,
                 input_payload=scope_draft,
             )
@@ -152,7 +145,6 @@ async def _run_delegated_dag_async(
             layer_results = await _execute_layer(
                 run_id=str(run_uuid),
                 layer=layer,
-                snapshot_id=snapshot_id,
                 scope_draft_json=scope_draft_json,
             )
 
@@ -183,7 +175,6 @@ async def _run_delegated_dag_async(
 
         repair_loop = RepairLoop(manager=manager, run_id=run_uuid)
         repair_result = await repair_loop.run_gates_and_repair(
-            snapshot_id=snapshot_id,
             scope_draft_json=scope_draft_json,
             project_name=str(run_uuid),
         )
@@ -205,7 +196,10 @@ async def _run_delegated_dag_async(
                 "results": completed_results,
             }
 
-        # 步骤 7：标记完成
+        # 步骤 7：打包工作区产物为 ZIP（供下载端点使用）
+        zip_file_count = await _export_workspace_zip(str(run_uuid))
+
+        # 步骤 8：标记完成
         await manager.mark_run_completed(
             run_uuid,
             output_payload={
@@ -213,6 +207,7 @@ async def _run_delegated_dag_async(
                 "total_layers": len(execution_plan),
                 "gate_passed": True,
                 "gate_repaired": repair_result.repaired,
+                "zip_file_count": zip_file_count,
             },
         )
 
@@ -253,7 +248,6 @@ async def _run_delegated_dag_async(
 async def _execute_layer(
     run_id: str,
     layer: list[str],
-    snapshot_id: str,
     scope_draft_json: str,
 ) -> list[dict]:
     """
@@ -267,7 +261,6 @@ async def _execute_layer(
 
     - run_id: job_run ID
     - layer: 当前层级的 agent_id 列表
-    - snapshot_id: 快照 ID
     - scope_draft_json: scope_draft JSON
     返回每个 agent 的执行结果列表。
     """
@@ -278,7 +271,6 @@ async def _execute_layer(
         result = await _execute_agent_step_async(
             run_id=run_id,
             agent_id=layer[0],
-            snapshot_id=snapshot_id,
             step_input_json=scope_draft_json,
         )
         return [result]
@@ -288,7 +280,6 @@ async def _execute_layer(
         _execute_agent_step_async(
             run_id=run_id,
             agent_id=agent_id,
-            snapshot_id=snapshot_id,
             step_input_json=scope_draft_json,
         )
         for agent_id in layer
@@ -308,6 +299,53 @@ async def _execute_layer(
             processed.append(result)
 
     return processed
+
+
+async def _export_workspace_zip(run_id: str) -> int:
+    """
+    收集本次 run 的工作区文件并打包保存 ZIP。
+
+    从 workspace_files 表加载文件 → ArtifactCollector 归一化 →
+    ZipPacker 打包 → save_zip 落盘（data/exports/{run_id}.zip），
+    供 API 下载端点（get_zip_path）读取。
+
+    - run_id: job_run ID
+    返回打包进 ZIP 的文件数。
+    """
+    from runtime_tools.exporters.collector import ArtifactCollector
+    from runtime_tools.exporters.storage import save_zip
+    from runtime_tools.exporters.zip_packer import ZipPacker
+    from sqlalchemy import text
+
+    from worker_app.orchestrator.run_manager import get_worker_session_factory
+
+    session_factory = get_worker_session_factory()
+    async with session_factory() as session:
+        result = await session.execute(
+            text(
+                "SELECT file_path, content, file_kind FROM workspace_files "
+                "WHERE run_id = :rid"
+            ),
+            {"rid": run_id},
+        )
+        rows = result.fetchall()
+
+    files_data = [
+        {"file_path": row[0], "content": row[1], "file_kind": row[2]}
+        for row in rows
+    ]
+
+    collector = ArtifactCollector()
+    entries = collector.collect(files_data)
+
+    packer = ZipPacker(project_name=run_id, files=entries)
+    zip_path = save_zip(run_id, packer.pack_to_bytes())
+
+    logger.info(
+        "工作区产物已打包: run_id=%s, %d 个文件, 路径=%s",
+        run_id, len(entries), zip_path,
+    )
+    return len(entries)
 
 
 def _parse_json(json_str: str) -> dict:
